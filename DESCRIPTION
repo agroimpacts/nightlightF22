@@ -2,7 +2,6 @@ Package: nightlightF22
 Title: Are neighborhoods with public housing more brightly lit than those without?
 Version: 0.0.0.1
 Authors: Lester Carver, Spandan Pandey
-Maintainer: Spandan sppandey@clarku.edu
 Description: Final year project
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
