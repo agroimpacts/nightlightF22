@@ -41,7 +41,13 @@ Approach and Method: An outline of the analytical methods and code you plan to u
 ```
 
 
-Data: A brief (~250 words) description and visualization of the datasets you will be using. That means spatial plots of the main datasets and their key values, and, as a bonus, a plot of summary statistics, e.g. a histogram or boxplot of one of the more importants variables in the dataset.
+Data: A brief (~250 words) description and visualization of the datasets you will be using. That means spatial plots of the main datasets and their key values, and, as a bonus, a plot of summary statistics, e.g. a histogram or boxplot of one of the more important variables in the dataset.
+
+- The monthly average night lights for 2021, averaged for each of the 12 months and across all months in the time series. This will come from the VNP46A2 - VIIRS/NPP Gap-Filled Lunar BRDF-Adjusted Nighttime Lights, which is daily, 500-meter resolution raster of nocturnal visible light coming from LADDS DAAC. 
+- Building footprints for each study area
+- Public housing locations (to be overlayed with building footprints to determine building structure)
+- Gridded population for each study area
+- 2020 Census tracts for each study area
 
 ```{r}
 
