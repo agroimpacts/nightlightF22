@@ -38,12 +38,13 @@ Approach and Method: An outline of the analytical methods and code you plan to u
 
 ```{r}
 
+
 ```
 
 
 Data: A brief (~250 words) description and visualization of the datasets you will be using. That means spatial plots of the main datasets and their key values, and, as a bonus, a plot of summary statistics, e.g. a histogram or boxplot of one of the more important variables in the dataset.
 
-- The monthly average night lights for 2021, averaged for each of the 12 months and across all months in the time series. This will come from the VNP46A2 - VIIRS/NPP Gap-Filled Lunar BRDF-Adjusted Nighttime Lights, which is daily, 500-meter resolution raster of nocturnal visible light coming from LADDS DAAC. 
+- The monthly average night lights for 2012 - 2021, averaged for January - March per year and then the long-term average in the time series. This will come from the VNP46A3 - VIIRS BRDF-Adjusted Monthly Nighttime Lights, which is a monthly, 15 arc second raster of nocturnal visible light.
 - Building footprints for each study area
 - Public housing locations (to be overlayed with building footprints to determine building structure)
 - Gridded population for each study area
@@ -69,7 +70,6 @@ Timelines: Provide a timeline for when each portion of the analysis will be comp
 4.Identifying similar areas in terms of building structure and population of non-public housing and public housing. 
 5.Sample pixels with and without public housing.
 6. Compare the average monthly nighttime radiance.
-2
 
 ```{r}
 
