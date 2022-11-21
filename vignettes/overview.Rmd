@@ -18,7 +18,7 @@ Summary: A brief (up to 250 words) description of the project, and a bullet poin
 Introduction
 
 Project Objectives:
-1. Finding whether neighborhoods with public housing more brightly lit than non-public housing in two major US cities.
+1. Finding whether neighborhoods with public housing more brightly lit than non-public housing in two major US cities (Boston and San Francisco).
 2. 
 3.
 
