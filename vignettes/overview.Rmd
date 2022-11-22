@@ -11,6 +11,9 @@ vignette: >
 
 ```{r setup}
 library(nightlightF22)
+library(dplyr)
+library(sf)
+library(ggplot2)
 ```
 
 # Introduction
@@ -36,20 +39,18 @@ library(nightlightF22)
 - 2020 Census tracts for each study area
 
 
-## Code: A bullet point summary of the analysis and coding approach that you propose to follow. For teams, this section should include a description of which member will be responsible for each bullet point.
+## Code:
 
-1.Calculate area of the public housing buildings (Creating intersecting public housing locations with building footprints with the area)
-2.Estimating population based on building volume (from the building footprints data and census tracts). 
-3.Calculating the monthly average of the nightlights.
+1.Intersect public housing locations with building footprints to get structure of public housing
+2.Estimating population based on building volume and gridded population. 
+3.Calculating the monthly average and long-term average of nightlights.
 4.Identifying similar areas in terms of building structure and population of non-public housing and public housing. 
 5.Sample pixels with and without public housing.
-6. Compare the average monthly nighttime radiance.
+6.Compare the average and long-term average monthly nighttime radiance.
 
+The necessary libraries include: `terra`, `dplyr`, `tidyr`, `sf`, and `ggplot2`.
 
-```{r}
-
-```
-
+For division of work, each teammate will take one of the study areas so will perform all steps, just with different locations.
 
 ## Timelines: Provide a timeline for when each portion of the analysis will be completed. These timelines should be constructed relative to the time period of presentations (during the last two weeks of class) and final project submission (during exam week). For teams, names should be associated with each step on the timeline.
 
