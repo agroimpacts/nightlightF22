@@ -13,11 +13,9 @@ vignette: >
 library(nightlightF22)
 ```
 
-Summary: A brief (up to 250 words) description of the project, and a bullet point or enumerated list of its primary objectives.
+# Introduction
 
-Introduction
-
-Project Objectives:
+## Project Objectives:
 1. Finding whether neighborhoods with public housing more brightly lit than non-public housing in two major US cities (Boston and San Francisco).
 2. 
 3.
@@ -27,42 +25,33 @@ Project Objectives:
 ```
 
 
-Approach and Method: An outline of the analytical methods and code you plan to use, including the names of key packages that you will draw on. This section should be composed of the following sub-sections:
+# Approach and Method
 
-1.Calculate area of the public housing buildings (Creating intersecting public housing locations with building footprints with the area)
-2.Estimating population based on building volume (from the building footprints data and census tracts). 
-3.Calculating the monthly average of the nightlights.
-4.Identifying similar areas in terms of building structure and population of non-public housing and public housing. 
-5.Sample pixels with and without public housing.
-6. Compare the average monthly nighttime radiance.
-
-```{r}
-
-
-```
-
-
-Data: A brief (~250 words) description and visualization of the datasets you will be using. That means spatial plots of the main datasets and their key values, and, as a bonus, a plot of summary statistics, e.g. a histogram or boxplot of one of the more important variables in the dataset.
+## Data:
 
 - The monthly average night lights for 2012 - 2021, averaged for January - March per year and then the long-term average in the time series. This will come from the VNP46A3 - VIIRS BRDF-Adjusted Monthly Nighttime Lights, which is a monthly, 15 arc second raster of nocturnal visible light.
 - Building footprints for each study area
 - Public housing locations (to be overlayed with building footprints to determine building structure)
-- Gridded population for each study area
+- 2020 Gridded population for each study area
 - 2020 Census tracts for each study area
 
+
+## Code: A bullet point summary of the analysis and coding approach that you propose to follow. For teams, this section should include a description of which member will be responsible for each bullet point.
+
+1.Calculate area of the public housing buildings (Creating intersecting public housing locations with building footprints with the area)
+2.Estimating population based on building volume (from the building footprints data and census tracts). 
+3.Calculating the monthly average of the nightlights.
+4.Identifying similar areas in terms of building structure and population of non-public housing and public housing. 
+5.Sample pixels with and without public housing.
+6. Compare the average monthly nighttime radiance.
+
+
 ```{r}
 
 ```
 
 
-Code: A bullet point summary of the analysis and coding approach that you propose to follow. For teams, this section should include a description of which member will be responsible for each bullet point.
-
-```{r}
-
-```
-
-
-Timelines: Provide a timeline for when each portion of the analysis will be completed. These timelines should be constructed relative to the time period of presentations (during the last two weeks of class) and final project submission (during exam week). For teams, names should be associated with each step on the timeline.
+## Timelines: Provide a timeline for when each portion of the analysis will be completed. These timelines should be constructed relative to the time period of presentations (during the last two weeks of class) and final project submission (during exam week). For teams, names should be associated with each step on the timeline.
 
 1.Calculate area of the public housing buildings (Creating intersecting public housing locations with building footprints with the area)
 2.Estimating population based on building volume (from the building footprints data and census tracts). 
@@ -75,7 +64,7 @@ Timelines: Provide a timeline for when each portion of the analysis will be comp
 
 ```
 
-Anticipated outcomes: Briefly describe, as bullet points, the outcomes you expect for each of your primary project objectives
+# Anticipated outcomes: Briefly describe, as bullet points, the outcomes you expect for each of your primary project objectives
 ```{r}
 
 ```
