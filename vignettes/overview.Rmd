@@ -9,7 +9,7 @@ vignette: >
 ---
 
 
-```{r setup}
+```{r setup, echo = FALSE}
 library(nightlightF22)
 library(dplyr)
 library(sf)
@@ -48,13 +48,17 @@ In this project, we are looking at the extent of brightness around public housin
 - Calculating the monthly average and long-term average of nightlights.
 - Identifying similar areas in terms of building structure and population of non-public housing and public housing. 
 - Sample pixels with and without public housing.
-- Compare the average and long-term average monthly nighttime radiance.
+- Compare the average and long-term average monthly nighttime radiance using regression analysis.
 
 The necessary libraries include: `terra`, `dplyr`, `tidyr`, `sf`, and `ggplot2`.
 
 For division of work, each teammate will take one of the study areas so will perform all steps, just with different locations.
 
+<<<<<<< HEAD
 ## Timelines: 
+=======
+## Timelines:
+>>>>>>> 50e2519eeba62b8697bcdd9369cefeb1a349cc7e
 
 ```{r, echo = FALSE}
 deadline <- read.csv(system.file("data/GEOG346_Timeline_LCSP.csv", package = "nightlightF22" ))
@@ -63,8 +67,8 @@ kable(deadline, caption = "Final Project Timeline", col.names = c("Tentative dat
 ```
 
 
-
-
-<!-- #Anticipated outcomes: Briefly describe, as bullet points, the outcomes you expect for each of your primary project objectives -->
+## Anticipated outcomes: 
+- We will be able to determine whether areas with public housing are brighter or not by comparing areas with similar populations and urban structure. 
+- We expect to be able to discuss the results in relation to whether there are different levels of surveillance between public housing and non-public housing areas (and whether we can detect those differences using nightlight imagery).
 
 
