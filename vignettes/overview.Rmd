@@ -21,10 +21,10 @@ library (knitr)
 
 # Introduction
 
-
+In this project, we are looking at the extent of brightness around public housing across two major US cities: Boston and San Franciso.It is an extension of the previous semester's work that used VIIRS nightlights data for a similar comparison for the neighborhoods of New York City. 
 
 ## Project Objectives:
-1. Finding whether neighborhoods with public housing more brightly lit than non-public housing in two major US cities (Boston and San Francisco).
+1. Finding whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in two major US cities Boston and San Francisco.
 2. 
 3.
 
@@ -54,7 +54,7 @@ The necessary libraries include: `terra`, `dplyr`, `tidyr`, `sf`, and `ggplot2`.
 
 For division of work, each teammate will take one of the study areas so will perform all steps, just with different locations.
 
-<!-- ## Timelines: Provide a timeline for when each portion of the analysis will be completed. These timelines should be constructed relative to the time period of presentations (during the last two weeks of class) and final project submission (during exam week). For teams, names should be associated with each step on the timeline. -->
+## Timelines: 
 
 ```{r, echo = FALSE}
 deadline <- read.csv(system.file("data/GEOG346_Timeline_LCSP.csv", package = "nightlightF22" ))
