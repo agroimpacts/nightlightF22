@@ -9,7 +9,7 @@ vignette: >
 ---
 
 
-```{r setup}
+```{r setup, echo = FALSE}
 library(nightlightF22)
 library(dplyr)
 library(sf)
