@@ -14,18 +14,18 @@ library(nightlightF22)
 library(dplyr)
 library(sf)
 library(ggplot2)
+library(terra)
+library(tidyr)
 ```
 
 # Introduction
+
+
 
 ## Project Objectives:
 1. Finding whether neighborhoods with public housing more brightly lit than non-public housing in two major US cities (Boston and San Francisco).
 2. 
 3.
-
-```{r}
-
-```
 
 
 # Approach and Method
