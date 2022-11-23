@@ -54,7 +54,7 @@ The necessary libraries include: `terra`, `dplyr`, `tidyr`, `sf`, and `ggplot2`.
 
 For division of work, each teammate will take one of the study areas so will perform all steps, just with different locations.
 
-<!-- ## Timelines: Provide a timeline for when each portion of the analysis will be completed. These timelines should be constructed relative to the time period of presentations (during the last two weeks of class) and final project submission (during exam week). For teams, names should be associated with each step on the timeline. -->
+## Timelines:
 
 ```{r, echo = FALSE}
 deadline <- read.csv(system.file("data/GEOG346_Timeline_LCSP.csv", package = "nightlightF22" ))
