@@ -1,7 +1,8 @@
 ---
-title: "overview"
+title: "GEOG346 - Final Project Overview"
 output: rmarkdown::html_vignette
-authors: Lester Carver and Spandan Pandey
+author: "Lester Carver and Spandan Pandey"
+date: "11-23-2022"
 vignette: >
   %\VignetteIndexEntry{overview}
   %\VignetteEngine{knitr::rmarkdown}
@@ -21,12 +22,15 @@ library (knitr)
 
 # Introduction
 
-In this project, we are looking at the extent of brightness around public housing across two major US cities: Boston and San Franciso.It is an extension of the previous semester's work that used VIIRS nightlights data for a similar comparison for the neighborhoods of New York City. 
+The excessive or poor use of artificial outdoor light in urban and suburban areas has adverse impacts on humans and non-humans.Its contribution to the increase in CO2 in the atmosphere is critical in the context of climate change. Apart from pollution, it is important to study the socioeconomic and political dimensions of the nighttime light exposure due to its increasing use in surveillance by the police.
+
+In this project, we are looking at the extent of nighttime brightness around public housing across two major US cities: Boston and San Francisco.It is an extension of the previous semester's work that used Visible Infrared Imaging Radiometer Suite (VIIRS) nightlights data for a similar comparison for the neighborhoods of New York City. Our aim is to find whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in two major US cities Boston and San Francisco.
 
 ## Project Objectives:
-1. Finding whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in two major US cities Boston and San Francisco.
-2. 
-3.
+1. To evaluate any correlation between brightly lit neighborhoods and neighborhoods with public housing across two US cities.
+2. To assess the feasibility of nightlight imagery to find differences of excessively lit neighborhood and those which are not.
+3. To detect any changes in the level of nighttime brightness between 2012 and 2021.
+4. To understand the limitations of the available data in the assessment of nighttime light levels and providing suggestions for improvement.
 
 
 # Approach and Method
@@ -54,11 +58,8 @@ The necessary libraries include: `terra`, `dplyr`, `tidyr`, `sf`, and `ggplot2`.
 
 For division of work, each teammate will take one of the study areas so will perform all steps, just with different locations.
 
-<<<<<<< HEAD
+
 ## Timelines: 
-=======
-## Timelines:
->>>>>>> 50e2519eeba62b8697bcdd9369cefeb1a349cc7e
 
 ```{r, echo = FALSE}
 deadline <- read.csv(system.file("data/GEOG346_Timeline_LCSP.csv", package = "nightlightF22" ))
