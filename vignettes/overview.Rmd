@@ -29,9 +29,6 @@ In this project, we are looking at the extent of nighttime brightness around pub
 ## Project Objectives:
 1. To evaluate any correlation between brightly lit neighborhoods and neighborhoods with public housing across two US cities.
 2. To assess the feasibility of nightlight imagery to find differences of excessively lit neighborhood and those which are not.
-3. To detect any changes in the level of nighttime brightness between 2012 and 2021.
-4. To understand the limitations of the available data in the assessment of nighttime light levels and providing suggestions for improvement.
-
 
 # Approach and Method
 
