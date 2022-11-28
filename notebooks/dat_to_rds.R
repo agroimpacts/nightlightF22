@@ -7,3 +7,8 @@ saveRDS(bstn_census, file = "~/GeoSpaAR/nightlightF22/data/boston_2020census.rds
 sf_ftprnt <- read_sf("C:/Users/leste/OneDrive/Documents/SF_buildingfootprint.geojson")
 saveRDS(sf_ftprnt, file = "~/GeoSpaAR/nightlightF22/data/sf_buildings.rds")
 
+sf_census <- read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/SanFrancisco_2020census.geojson")
+saveRDS(sf_census, file = "~/GeoSpaAR/nightlightF22/data/sf_2020census.rds")
+
+
+
