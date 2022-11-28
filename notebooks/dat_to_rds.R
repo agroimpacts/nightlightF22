@@ -1,3 +1,7 @@
+library(readr)
+library(sf)
+library(raster)
+
 bstn_ftprnt <- read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_buildingfootprints.shp")
 saveRDS(bstn_ftprnt, file = "~/GeoSpaAR/nightlightF22/data/boston_buildings.rds")
 
@@ -9,6 +13,18 @@ saveRDS(sf_ftprnt, file = "~/GeoSpaAR/nightlightF22/data/sf_buildings.rds")
 
 sf_census <- read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/SanFrancisco_2020census.geojson")
 saveRDS(sf_census, file = "~/GeoSpaAR/nightlightF22/data/sf_2020census.rds")
+
+boston_publichousing <- read_csv("notebooks/extdata/boston_publichousing.csv")
+boston_ph <- st_as_sf(boston_publichousing, coords = c("Long", "Lat"), crs = 4326)
+saveRDS(boston_ph, file = "~/GeoSpaAR/nightlightF22/data/boston_ph.rds")
+
+boston_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/bstn_grid2010.tif")
+saveRDS(boston_grid, file = "~/GeoSpaAR/nightlightF22/data/bstn_grid.rds")
+
+
+
+
+
 
 
 

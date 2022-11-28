@@ -1,0 +1,36 @@
+---
+title: "nightlights_boston"
+author: "Lester Carver"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{nightLights_boston}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(terra)
+library(dplyr)
+library(sf)
+library(ggplot2)
+```
+
+
+
+
+
+#USE THIS CHUNK FOR VERY LARGE SETS OF ANALYSIS
+```{r, eval=FALSE}
+
+```
+#USE THIS CHUNK TO INSERT GRAPHICS
+```{r, echo=FALSE}
+knitr::include_graphics(
+  here::here("vignettes/figures/IMAGENAMEHERE")
+)
+```

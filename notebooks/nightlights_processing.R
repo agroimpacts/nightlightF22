@@ -7,18 +7,18 @@ library(dplyr)
 library(sf)
 library(terra)
 
-boston_2020census <- readRDS("~/GeoSpaAR/nightlightF22/data/boston_2020census.rds") %>%
+sf_2020census <- readRDS("~/GeoSpaAR/nightlightF22/data/sf_2020census.rds") %>%
   st_transform(4326)
-imgs <- dir("D:/Boston", full.names = TRUE,
+imgs <- dir("D:/SanFran", full.names = TRUE,
             pattern = "tif")
 
 nlr <- lapply(imgs, function(x) {  # x <- imgs[1]
-  print(basename(x))
+  #print(basename(x))
   r <- rast(x)
   yd <- gsub("A", "", strsplit(basename(x), split = "\\.")[[1]][2])
   yd <- as.Date(yd, "%Y%j")
 
-  cr <- crop(r, vect(boston_2020census))
+  cr <- crop(r, vect(sf_2020census))
   cr[cr == 65535] <- NA
   names(cr) <- yd
   cr
@@ -26,7 +26,7 @@ nlr <- lapply(imgs, function(x) {  # x <- imgs[1]
 
 nlrs <- do.call(c, nlr)
 # plot(nlrs[[1]])
-# plot(vect(boston_2020census), add = TRUE)
+# plot(vect(sf_2020census), add = TRUE)
 
 # Monthly means
 nldates <- as.Date(names(nlrs), "%Y-%m-%d")
@@ -41,9 +41,9 @@ longterm <- app(nlrs, mean, na.rm = TRUE)
 names(longterm) <- "2012-2021"
 
 # write out results
-writeRaster(nlrs, filename = "~/GeoSpaAR/nightlightF22/data/Boston_nightlights.tif", overwrite = TRUE)
-writeRaster(monthly_means, filename = "~/GeoSpaAR/nightlightF22/data/Boston_nightlights_mean_month.tif",
+writeRaster(nlrs, filename = "~/GeoSpaAR/nightlightF22/data/SF_nightlights.tif", overwrite = TRUE)
+writeRaster(monthly_means, filename = "~/GeoSpaAR/nightlightF22/data/SF_nightlights_mean_month.tif",
             overwrite = TRUE)
-writeRaster(longterm, filename = "~/GeoSpaAR/nightlightF22/data/Boston_nightlights_mean.tif",
+writeRaster(longterm, filename = "~/GeoSpaAR/nightlightF22/data/SF_nightlights_mean.tif",
             overwrite = TRUE)
-saveRDS(nldates, file = "~/GeoSpaAR/nightlightF22/data/Boston_nightlight_dates.rds")
+saveRDS(nldates, file = "~/GeoSpaAR/nightlightF22/data/SF_nightlight_dates.rds")
