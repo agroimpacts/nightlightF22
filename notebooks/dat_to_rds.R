@@ -18,8 +18,12 @@ boston_publichousing <- read_csv("notebooks/extdata/boston_publichousing.csv")
 boston_ph <- st_as_sf(boston_publichousing, coords = c("Long", "Lat"), crs = 4326)
 saveRDS(boston_ph, file = "~/GeoSpaAR/nightlightF22/data/boston_ph.rds")
 
-boston_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/bstn_grid2010.tif")
+boston_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/boston_pop2010.tif")
 saveRDS(boston_grid, file = "~/GeoSpaAR/nightlightF22/data/bstn_grid.rds")
+
+
+sf_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/SF_gridpop_2010.tif")
+saveRDS(sf_grid, file = "~/GeoSpaAR/nightlightF22/data/sf_grid.rds")
 
 
 
