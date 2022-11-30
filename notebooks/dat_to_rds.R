@@ -25,10 +25,7 @@ saveRDS(boston_grid, file = "~/GeoSpaAR/nightlightF22/data/bstn_grid.rds")
 sf_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/SF_gridpop_2010.tif")
 saveRDS(sf_grid, file = "~/GeoSpaAR/nightlightF22/data/sf_grid.rds")
 
-
-
-
-
-
+boston_pop <- read_csv("~/GeoSpaAR/nightlightF22/notebooks/extdata/bstn_pop.csv")
+saveRDS(boston_pop, file = "~/GeoSpaAR/nightlightF22/data/bstn_pop.rds")
 
 
