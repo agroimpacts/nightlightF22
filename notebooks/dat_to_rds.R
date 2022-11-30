@@ -26,3 +26,8 @@ saveRDS(sf_grid, file = "~/GeoSpaAR/nightlightF22/data/sf_grid.rds")
 boston_pop <- read_csv("~/GeoSpaAR/nightlightF22/notebooks/extdata/bstn_pop.csv")
 saveRDS(boston_pop, file = "~/GeoSpaAR/nightlightF22/data/bstn_pop.rds")
 
+#Make Boston outline
+sf_use_s2(FALSE)
+bstnoutline <- st_union(bstn_tract) %>% st_buffer(dist = 0.0001) %>%
+  rmapshaper::ms_simplify(.)
+saveRDS(bstntract, file = "~/GeoSpaAR/nightlightF22/data/bstn.rds")
