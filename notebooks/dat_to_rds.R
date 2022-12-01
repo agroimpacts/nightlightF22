@@ -21,7 +21,7 @@ saveRDS(bstn_ph, file = "~/GeoSpaAR/nightlightF22/data/bstn_ph.rds")
 
 bstn_blgs <-
   read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_buildingfootprints.shp") %>%
-  st_transform(crs = st_crs(bstn_ph))
+  st_transform(crs = st_crs(bstn_census))
 saveRDS(bstn_blgs, file = "~/GeoSpaAR/nightlightF22/data/bstn_blgs.rds")
 
 sf_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/SF_gridpop_2010.tif")
