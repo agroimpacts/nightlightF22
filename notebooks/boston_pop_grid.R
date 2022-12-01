@@ -4,12 +4,19 @@
 library(sf)
 library(dplyr)
 library(terra)
+library(here)
+library(sp)
 
 
 # Boston population raster
-bstntract <- readRDS("~/GeoSpaAR/nightlightF22/data/boston_2020census.rds")
-bstn_pop <- bstntract <- readRDS("~/GeoSpaAR/nightlightF22/data/bstn_pop.rds")
-bstn_ph <- bstntract <- readRDS("~/GeoSpaAR/nightlightF22/data/bstn_ph.rds")
+bstn_tract <- readRDS(here("data/bstn_tract.RDS"))
+bstn_pop <- readRDS(here("data/bstn_pop.RDS"))
+bstn_ph <- readRDS(here("data/bstn_ph.RDS"))
+bstn_bldg <- readRDS(here("data/bstn_bldg.RDS"))
+
+# Intersect Public Housing locations with Buildings[ to get Public Housing in polygon format
+bstn_phpoly <- bstn_bldg %>% mutate(AreaFt = st_area(.)) %>%
+  st_intersection(., bstn_ph)
 
 # Add area to census tracts then join population data
 nytract_pop <- nytract %>%
