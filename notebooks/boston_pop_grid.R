@@ -21,11 +21,22 @@ bstn_php <- bstn_bldg %>% mutate(AreaFt = st_area(.)) %>%
   slice(bstn_intersect[[1]])
 saveRDS(bstn_php, file = "~/GeoSpaAR/nightlightF22/data/bstn_phpoly.rds")
 
-
+# Drop the column header row in census pop
+bstn_pop2 <- bstn_pop[-1,]
 # Add area to census tracts then join population data
-bstn_pop2 <- bstn_pop[-1,] %>% mutate(TRACT = as.numeric(TRACT))
 bstntract_pop <- bstn_tract %>%
   mutate(Area = as.numeric(units::set_units(st_area(.), "ft^2"))) %>%
-  mutate(TRACT = as.numeric(TRACTCE20)) %>%
+  mutate(TRACT = TRACTCE20) %>%
   inner_join(., bstn_pop2, by = "TRACT") %>%
   rename(TotalPop = P0020001)
+
+# Get nightlights grid
+nld <- rast(here("data/Boston_nightlights_mean.tif"))
+bstn <- readRDS(here("data/bstn.rds"))
+r <- nld[[1]]
+r[] <- 1:ncell(r)
+r <- mask(r, vect(bstn))
+p <- as.polygons(r) %>% st_as_sf()
+pgeo <- st_buffer(st_transform(p, st_crs(nytract_pop)), dist = 0) %>%
+  rename(cid = "2012-2021")
+# plot(p)
