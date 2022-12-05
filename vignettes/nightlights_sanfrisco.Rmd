@@ -1,0 +1,26 @@
+---
+title: "nightlights_sanfrisco"
+author: "Spandan Pandey"
+date: "2022-12-04"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{nightlights_sanfrisco}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, warning = FALSE}
+library(nightlightF22)
+library(terra)
+library(dplyr)
+library(sf)
+library(ggplot2)
+```
+
