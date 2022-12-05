@@ -19,6 +19,7 @@ pgeo <- st_buffer(st_transform(p, st_crs(bstn_tract)), dist = 0) %>%
 
 
 # Create building square footage grid
+# Intersection
 buildings <- st_buffer(st_make_valid(bstn_bldg), dist = 0)
 build_int <- st_intersection(buildings, pgeo)
 
