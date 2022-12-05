@@ -20,6 +20,17 @@ library(sf)
 library(ggplot2)
 ```
 
+## Load in Data
+```{r}
+# Boston census tracts
+boston_2020census <- readRDS("~/GeoSpaAR/nightlightF22/data/boston_2020census.rds")
+
+# Public housing developments
+
+# Nightlights data, monthly, average for each month over 10 years, 10 year 
+# mean
+
+```
 
 
 
