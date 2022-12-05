@@ -90,6 +90,6 @@ ph_fraction[is.na(ph_fraction)] <- 0
 ph_fraction <- mask(rast(ph_fraction), city_background)
 # plot(ph_fraction)
 
-# writeRaster(ph_fraction, filename = here("data/bstn_ph_coverage.tif",
-#             overwrite = TRUE)
+writeRaster(ph_fraction, filename = here("data/bstn_ph_coverage.tif"),
+            overwrite = TRUE)
 
