@@ -23,19 +23,15 @@ pgeo <- st_buffer(st_transform(p, st_crs(bstn_tract)), dist = 0) %>%
 buildings <- st_buffer(st_make_valid(bstn_bldg), dist = 0)
 build_int <- st_intersection(buildings, pgeo)
 
-# Find total building volume in each cell
+# Find total building square footage in each cell
 build_dims <- st_drop_geometry(build_int) %>%
   group_by(cid) %>%
-  summarise(area = sum(area_seg, na.rm = TRUE),
-            vol = sum(volume_seg, na.rm = TRUE) / 1e06, # to cubic hectometers
-            hgt = mean(heightroof_1, na.rm = TRUE)) %>%
+  summarise(area_sqft = sum(AREA_SQ_FT, na.rm = TRUE)) %>%
   left_join(p %>% rename(cid = "2012-2021"), .) %>%
   na.omit(.)
 
-# Create gridded building volume raster
-buildr <- lapply(c("area", "vol", "hgt"), function(x) {
-  rasterize(vect(build_dims), r, x)
-}) %>% do.call(c, .)
+# Create gridded building sq footage raster
+buildr <- rasterize(vect(build_dims), r)
 # plot(buildr)
 
 writeRaster(buildr, filename = "inst/extdata/nyc_building_dims.tif",
