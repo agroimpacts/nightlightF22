@@ -84,7 +84,8 @@ writeRaster(popr, filename = here("data/bstn_pop.tif"), overwrite = TRUE)
 city_background <- popr
 city_background[city_background >= 0] <- 0
 
-ph_fraction <- exactextractr::coverage_fraction(r, st_combine(bstn_ph))[[1]]
+ph_fraction <- exactextractr::coverage_fraction(
+  raster::raster(r), st_combine(bstn_php %>% st_transform(crs = 4326)))[[1]]
 ph_fraction[is.na(ph_fraction)] <- 0
 ph_fraction <- mask(rast(ph_fraction), city_background)
 # plot(ph_fraction)
