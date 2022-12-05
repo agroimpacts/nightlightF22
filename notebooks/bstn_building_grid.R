@@ -30,9 +30,10 @@ build_dims <- st_drop_geometry(build_int) %>%
   left_join(p %>% rename(cid = "2012-2021"), .) %>%
   na.omit(.)
 
+# ASK LYNDON IF THIS STEP IS NECESSARY??
 # Create gridded building sq footage raster
-buildr <- rasterize(vect(build_dims), r)
+# buildr <- rasterize(vect(build_dims), r)
 # plot(buildr)
-
-writeRaster(buildr, filename = "inst/extdata/nyc_building_dims.tif",
-            overwrite = TRUE)
+#
+# writeRaster(buildr, filename = "inst/extdata/nyc_building_dims.tif",
+#             overwrite = TRUE)
