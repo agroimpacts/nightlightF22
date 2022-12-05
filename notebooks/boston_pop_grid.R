@@ -21,6 +21,8 @@ bstn_php <- bstn_bldg %>% mutate(AreaFt = st_area(.)) %>%
   slice(bstn_intersect[[1]])
 saveRDS(bstn_php, file = here("data/bstn_phpoly.rds"))
 
+# CREATE POPULATION GRID FOR BOSTON--------------------------------------------
+
 # Drop the column header row in census pop
 bstn_pop2 <- bstn_pop[-1,]
 # Add area to census tracts then join population data
@@ -71,5 +73,22 @@ popr[popr == cids[!cids %in% r_pop_vals$cid]] <- 0
 # plot(popr[[1]])
 # plot(bstn_tract %>% st_transform(crs = 4326) %>% st_geometry(), add = TRUE)
 
+# Convert population to integer
+popr[] <- as.integer(popr[])
 
+writeRaster(popr, filename = here("data/bstn_pop.tif"), overwrite = TRUE)
+
+# CREATE GRID OF PUBLIC HOUSING PROPORTION--------------------------------------
+
+# Create raster with proportion of pixel covered by public housing
+city_background <- popr
+city_background[city_background >= 0] <- 0
+
+ph_fraction <- exactextractr::coverage_fraction(r, st_combine(bstn_ph))[[1]]
+ph_fraction[is.na(ph_fraction)] <- 0
+ph_fraction <- mask(rast(ph_fraction), city_background)
+# plot(ph_fraction)
+
+# writeRaster(ph_fraction, filename = here("data/bstn_ph_coverage.tif",
+#             overwrite = TRUE)
 
