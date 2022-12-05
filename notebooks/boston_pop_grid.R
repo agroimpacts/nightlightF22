@@ -15,7 +15,7 @@ bstn_pop <- readRDS(here("data/bstn_pop.RDS"))
 bstn_ph <- readRDS(here("data/bstn_ph.RDS"))
 bstn_bldg <- readRDS(here("data/bstn_bldg.RDS"))
 
-# Intersect Public Housing locations with Buildings to get Public Housing in polygon format
+# Intersect Public Housing locations with Buildings to get Public Housing as polygons
 bstn_intersect<- bstn_bldg  %>% st_intersects(st_combine(bstn_ph), .)
 bstn_php <- bstn_bldg %>% mutate(AreaFt = st_area(.)) %>%
   slice(bstn_intersect[[1]])
@@ -25,10 +25,10 @@ saveRDS(bstn_php, file = here("data/bstn_phpoly.rds"))
 bstn_pop2 <- bstn_pop[-1,]
 # Add area to census tracts then join population data
 bstntract_pop <- bstn_tract %>%
-  mutate(Area = as.numeric(units::set_units(st_area(.), "ft^2"))) %>%
-  mutate(TRACT = TRACTCE20) %>%
-  inner_join(., bstn_pop2, by = "TRACT") %>%
-  rename(TotalPop = P0020001)
+  mutate(Area = as.numeric((st_area(.)))) %>%
+  mutate(GEOCODE = GEOID20) %>%
+  inner_join(., bstn_pop2, by = "GEOCODE") %>%
+  mutate(TotalPop = as.numeric(P0020001))
 
 # Get nightlights grid
 nld <- rast(here("data/Boston_nightlights_mean.tif"))
@@ -44,8 +44,32 @@ pgeo <- st_buffer(st_transform(p, st_crs(bstn_tract)), dist = 0) %>%
 # plot(pgeo)
 # plot(bstn_tract %>% st_geometry(), add = TRUE)
 
+
 # Intersect tracts with polygon grid and calculate area of segments
-# then calculate population within each 'cutup' census tract piece
+# Calculate population within each 'cutup' census tract piece
 tracts_cut <- st_intersection(x = bstntract_pop, y = pgeo) %>%
   mutate(area_seg = as.numeric(st_area(.))) %>%
-  mutate(pop_seg = area_seg / area * TotalPop)
+  mutate(pop_seg = area_seg / Area * TotalPop)
+
+
+# Calculate sum of population of tract segments within each cell
+# The 'layer' column indicates which cell index the tract segment belongs to
+r_pop_vals <- tracts_cut %>% group_by(cid) %>% st_drop_geometry() %>%
+  summarise(., pop = sum(pop_seg, na.rm = TRUE))
+# tracts_cut %>% select(cid) %>% plot()
+
+# Retrieve values from r
+cids <- values(r)[!is.na(values(r))]
+# plot(p$geometry)
+
+plot(bstntract_pop["TotalPop"])
+
+# Replace cid values with population values
+# Replace NA values with 0
+popr <- subst(r, from = r_pop_vals$cid, to = r_pop_vals$pop)
+popr[popr == cids[!cids %in% r_pop_vals$cid]] <- 0
+# plot(popr[[1]])
+# plot(bstn_tract %>% st_transform(crs = 4326) %>% st_geometry(), add = TRUE)
+
+
+
