@@ -14,12 +14,12 @@ saveRDS(bstn_tract, file = "~/GeoSpaAR/nightlightF22/data/bstn_tract.rds")
 
 bstn_ph <- read_csv("notebooks/extdata/boston_publichousing.csv")
 bstn_ph <-
-  st_as_sf(bstn_ph, coords = c("Long", "Lat"), crs = 4326) %>%
-  st_transform(crs = st_crs(bstn_tract))
+  st_as_sf(boston_publichousing, coords = c("Long", "Lat"), crs = 4326) %>%
+  st_transform(crs = st_crs(bstn_census))
 saveRDS(bstn_ph, file = "~/GeoSpaAR/nightlightF22/data/bstn_ph.rds")
 
 bstn_blgs <-
-  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/structures_poly_35.shp") %>%
+  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_buildingfootprints.shp") %>%
   st_transform(crs = 4326) %>% st_transform(crs = st_crs(bstn_ph))
 saveRDS(bstn_blgs, file = "~/GeoSpaAR/nightlightF22/data/bstn_bldg.rds")
 
@@ -32,6 +32,9 @@ bstnoutline <- st_union(bstn_tract) %>% st_buffer(dist = 0.0001) %>%
 saveRDS(bstntract, file = "~/GeoSpaAR/nightlightF22/data/bstn.rds")
 
 # SAN FRAN DATA CLEANING
+
+sf_pop <- read_csv("notebooks/extdata/San_Francisco_Pop_data.csv")
+saveRDS(sf_pop, file = "~/FinalProject_GeospatialAnalysisWithR/nightlightF22/data/sanfrisco_pop.rds")
 
 sf_ftprnt <- read_sf("C:/Users/leste/OneDrive/Documents/SF_buildingfootprint.geojson")
 saveRDS(sf_ftprnt, file = "~/GeoSpaAR/nightlightF22/data/sf_buildings.rds")
