@@ -14,7 +14,7 @@ r[] <- 1:ncell(r)
 # Mask to bstn, convert to polygons and project to Mass State Plane
 r <- mask(r, bstn)
 p <- as.polygons(r) %>% st_as_sf()
-pgeo <- st_buffer(st_transform(p, st_crs(bstn_tract)), dist = 0) %>%
+pgeo <- st_buffer(st_transform(p, st_crs(bstn_bldg)), dist = 0) %>%
   rename(cid = "2012-2021")
 
 
@@ -30,10 +30,10 @@ build_dims <- st_drop_geometry(build_int) %>%
   left_join(p %>% rename(cid = "2012-2021"), .) %>%
   na.omit(.)
 
-# ASK LYNDON IF THIS STEP IS NECESSARY??
+
 # Create gridded building sq footage raster
-# buildr <- rasterize(vect(build_dims), r)
-# plot(buildr)
-#
-# writeRaster(buildr, filename = "inst/extdata/nyc_building_dims.tif",
-#             overwrite = TRUE)
+buildr <- rasterize(vect(build_dims), r, field = 'area_sqft')
+plot(buildr)
+
+writeRaster(buildr, filename = here("data/bstn_bldg_grid.tif"),
+            overwrite = TRUE)
