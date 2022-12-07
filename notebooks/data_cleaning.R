@@ -14,12 +14,12 @@ saveRDS(bstn_tract, file = "~/GeoSpaAR/nightlightF22/data/bstn_tract.rds")
 
 bstn_ph <- read_csv("notebooks/extdata/boston_publichousing.csv")
 bstn_ph <-
-  st_as_sf(boston_publichousing, coords = c("Long", "Lat"), crs = 4326) %>%
-  st_transform(crs = st_crs(bstn_census))
+  st_as_sf(bstn_ph, coords = c("Long", "Lat"), crs = 4326) %>%
+  st_transform(crs = st_crs(bstn_tract))
 saveRDS(bstn_ph, file = "~/GeoSpaAR/nightlightF22/data/bstn_ph.rds")
 
 bstn_blgs <-
-  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_buildingfootprints.shp") %>%
+  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/structures_poly_35.shp") %>%
   st_transform(crs = 4326) %>% st_transform(crs = st_crs(bstn_ph))
 saveRDS(bstn_blgs, file = "~/GeoSpaAR/nightlightF22/data/bstn_bldg.rds")
 
