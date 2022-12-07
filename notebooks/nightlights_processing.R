@@ -1,11 +1,13 @@
-# Prepare monthly nightlights data downloaded from
+  # Prepare monthly nightlights data downloaded from
 # https://ladsweb.modaps.eosdis.nasa.gov
 # and first converted to geotiff using transformhdf5_debugged.ipynb
 # Run for both Boston & San Francisco nightlights
 
+
 library(dplyr)
 library(sf)
 library(terra)
+
 
 sf_2020census <- readRDS("~/GeoSpaAR/nightlightF22/data/sf_2020census.rds") %>%
   st_transform(4326)
