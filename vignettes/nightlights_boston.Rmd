@@ -4,7 +4,7 @@ author: "Lester Carver"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{nightLights_boston}
+  %\VignetteIndexEntry{nightlights_boston}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,18 +18,66 @@ library(terra)
 library(dplyr)
 library(sf)
 library(ggplot2)
+library(here)
 ```
 
-## Load in Data
+## Datasets
+
 ```{r}
-# Boston census tracts
-boston_2020census <- readRDS("~/GeoSpaAR/nightlightF22/data/boston_2020census.rds")
+# Boston Census tracts & outline
+bstntract <- readRDS(here("data/bstn_tract.rds"))
+bstn <- readRDS(here("data/bstn.rds"))
 
-# Public housing developments
+# Boston public housing developments & grid
+bstn_ph <- readRDS(here("data/bstn_phpoly.rds"))
+bstn_ph_grid <- rast(here("data/bstn_ph_coverage.tif"))
 
-# Nightlights data, monthly, average for each month over 10 years, 10 year 
-# mean
+# Boston buildings & grid
+bstn_bldg_grid <- rast(here("data/bstn_bldg_grid.tif"))
+bstn_bldg <- readRDS(here("data/bstn_bldg.rds"))
 
+# Nightlights data, monthly, average for each month over 10 years, 10 year mean
+nlights <- rast(here("data/Boston_nightlights.tif"))
+nlight_mo <- rast(here("data/Boston_nightlights_mean_month.tif"))
+nlight_lt <- rast(here("data/Boston_nightlights_mean.tif"))
+names(nlight_lt) <- "brightness"
+nl_dates <- readRDS(here("data/Boston_nightlight_dates.rds"))
+```
+
+## Public Housing 
+
+```{r, echo=FALSE, eval=FALSE}
+phplt <- ggplot() +
+  geom_sf(data = bstntract, col = alpha("grey7", 0.3), fill = "grey") +
+  geom_sf(data = bstn_ph, aes(fill = ''), col = "red", 
+          show.legend = "polygon") +
+  labs(fill = "Public Housing Developments") + 
+  theme(legend.position = c(0.2, 0.9)) 
+ggsave(phplt, file = here("vignettes/figures/bstn_housing.png"), 
+       height = 7, width = 7, dpi = 300)
+```
+
+The map below shows Boston's public housing developments, a total of 53 developments.
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/bstn_housing.png"))
+```
+
+## Nightlights
+
+```{r, echo=FALSE}
+nlplt <- ggplot(as.data.frame(nlight_lt, xy = TRUE)) + 
+  geom_raster(aes(x = x, y = y, fill = brightness)) +
+  geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", col = "yellow", size = 0.2) +
+  scale_fill_distiller(
+    guide = guide_colorbar(ticks = FALSE),
+    type = "seq", direction = -1, palette = "Greys"
+  ) + xlab('') + ylab('') + theme_void()
+```
+The image below is the average monthly brightness of Boston nightlights between the years 2012 - and 2021. 
+
+```{r, echo=FALSE, fig.height=5, fig.width=7}
+nlplt
 ```
 
 
