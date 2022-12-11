@@ -9,18 +9,20 @@ library(raster)
 # Write CSV files to SF objects
 # Create outline of Boston
 
-bstn_tract <- read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_2020census.geojson")
+bstn_tract <-
+  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_2020census.geojson") %>%
+  st_transform(crs = 26986)
 saveRDS(bstn_tract, file = "~/GeoSpaAR/nightlightF22/data/bstn_tract.rds")
 
 bstn_ph <- read_csv("notebooks/extdata/boston_publichousing.csv")
 bstn_ph <-
-  st_as_sf(boston_publichousing, coords = c("Long", "Lat"), crs = 4326) %>%
-  st_transform(crs = st_crs(bstn_census))
+  st_as_sf(bstn_ph, coords = c("Long", "Lat"), crs = 4326) %>%
+  st_transform(crs = 26986)
 saveRDS(bstn_ph, file = "~/GeoSpaAR/nightlightF22/data/bstn_ph.rds")
 
 bstn_blgs <-
-  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/Boston_buildingfootprints.shp") %>%
-  st_transform(crs = 4326) %>% st_transform(crs = st_crs(bstn_ph))
+  read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/structures_poly_35.shp") %>%
+  st_transform(crs = 4326) %>% st_transform(crs = 26986)
 saveRDS(bstn_blgs, file = "~/GeoSpaAR/nightlightF22/data/bstn_bldg.rds")
 
 boston_pop <- read_csv("~/GeoSpaAR/nightlightF22/notebooks/extdata/bstn_pop.csv")
