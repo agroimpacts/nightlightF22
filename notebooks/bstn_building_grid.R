@@ -23,16 +23,16 @@ pgeo <- st_buffer(st_transform(p, st_crs(bstn_bldg)), dist = 0) %>%
 buildings <- st_buffer(st_make_valid(bstn_bldg), dist = 0)
 build_int <- st_intersection(buildings, pgeo)
 
-# Find total building square footage in each cell
+# Find total building square ft in each cell and convert square ft to square m
 build_dims <- st_drop_geometry(build_int) %>%
   group_by(cid) %>%
-  summarise(area_sqft = sum(AREA_SQ_FT, na.rm = TRUE)) %>%
+  summarise(area_sqm = (sum(AREA_SQ_FT, na.rm = TRUE)) / 10.764) %>%
   left_join(p %>% rename(cid = "2012-2021"), .) %>%
   na.omit(.)
 
 
 # Create gridded building sq footage raster
-buildr <- rasterize(vect(build_dims), r, field = 'area_sqft')
+buildr <- rasterize(vect(build_dims), r, field = 'area_sqm')
 plot(buildr)
 
 writeRaster(buildr, filename = here("data/bstn_bldg_grid.tif"),

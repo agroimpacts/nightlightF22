@@ -4,12 +4,12 @@ author: "Lester Carver"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{nightLights_boston}
+  %\VignetteIndexEntry{nightlights_boston}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include = FALSE, warnings = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -18,22 +18,121 @@ library(terra)
 library(dplyr)
 library(sf)
 library(ggplot2)
+library(here)
 ```
+# Introduction
 
-## Load in Data
+
+
+## Datasets
+
+We will be using the following datasets for our analysis:
+
+- A set of images representing the time series of monthly night lights data over Boston covering the period 2012-2021, as well as the monthly average over the period and the average of each month during the 10 year period This data comes from the VNP46A3 - VIIRS Monthly Nighttime Lights, which are a part of NASA’s Black Marble Nighttime Lights Product Suite.  
+- Vector file of public housing locations in Boston
+- Gridded data of the proportion of public housing across Boston
+- Census tracts for Boston
+- Gridded population of Boston
+- Building footprints for Boston
+- Gridded data of the square meters of buildings in Boston, used to approximate living space
+
 ```{r}
-# Boston census tracts
-boston_2020census <- readRDS("~/GeoSpaAR/nightlightF22/data/boston_2020census.rds")
+# Boston Census tracts & outline
+bstntract <- readRDS(here("data/bstn_tract.rds"))
+bstn <- readRDS(here("data/bstn.rds"))
 
-# Public housing developments
+# Boston public housing developments & grid
+bstn_ph <- readRDS(here("data/bstn_phpoly.rds"))
+bstn_ph_grid <- rast(here("data/bstn_ph_coverage.tif"))[[1]]
 
-# Nightlights data, monthly, average for each month over 10 years, 10 year 
-# mean
+# Boston buildings & grid
+bstn_bldg_grid <- rast(here("data/bstn_bldg_grid.tif"))
+bstn_bldg <- readRDS(here("data/bstn_bldg.rds"))
 
+# Boston population grid
+bstn_pop <- rast(here("data/bstn_pop.tif"))[[1]]
+
+# Nightlights data, monthly, average for each month over 10 years, 10 year mean
+nlights <- rast(here("data/Boston_nightlights.tif"))
+nlight_mo <- rast(here("data/Boston_nightlights_mean_month.tif"))
+nlight_lt <- rast(here("data/Boston_nightlights_mean.tif"))
+names(nlight_lt) <- "brightness"
+nl_dates <- readRDS(here("data/Boston_nightlight_dates.rds"))
+```
+
+# Public Housing 
+
+```{r, echo=FALSE, eval=FALSE}
+phplt <- ggplot() +
+  geom_sf(data = bstntract, col = alpha("grey7", 0.3), fill = "grey") +
+  geom_sf(data = bstn_ph, aes(fill = ''), col = "red", 
+          show.legend = "polygon") +
+  labs(fill = "Public Housing Developments") + 
+  theme(legend.position = c(0.2, 0.9)) 
+ggsave(phplt, file = here("vignettes/figures/bstn_housing.png"), 
+       height = 7, width = 7, dpi = 300)
+```
+
+The map below shows Boston's public housing developments, a total of 53 developments.
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/bstn_housing.png"))
+```
+
+In order to compare areas with similar building structure and populations with and without public housing, we will use the gridded public housing coverage data combined with the gridded datasets for population and estimated square meters of buildings in Boston, which provides an estimate of the living space and structure of the city's built environment.
+
+```{r, fig.height=4, fig.width=9}
+rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_lt, bstn_pop))
+names(rs) <- c("ph", "area_sqm", "population", 
+               "radiance")
+plot(rs, nc = 2, axes = FALSE,
+     main = c("% Public housing", "Building Area (SqM)", "Population", 
+              "Nighttime radiance"))
 ```
 
 
+# Nightlights
 
+```{r, echo=FALSE}
+nlplt <- ggplot(as.data.frame(nlight_lt, xy = TRUE)) + 
+  geom_raster(aes(x = x, y = y, fill = brightness)) +
+  geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", 
+          col = "yellow", size = 0.2) +
+  scale_fill_distiller(
+    guide = guide_colorbar(ticks = FALSE),
+    type = "seq", direction = -1, palette = "Greys"
+  ) + xlab('') + ylab('') + theme_void()
+
+nlplt_mo <- ggplot(as.data.frame(nlight_mo, xy = TRUE)) + 
+  geom_raster(aes(x = x, y = y, fill = brightness)) +
+  geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", 
+          col = "yellow", size = 0.2) +
+  scale_fill_distiller(
+    guide = guide_colorbar(ticks = FALSE),
+    type = "seq", direction = -1, palette = "Greys"
+  ) + xlab('') + ylab('') + theme_void()
+```
+
+The image below is the average monthly brightness of Boston nightlights between the years 2012 - and 2021. 
+
+```{r, echo=FALSE, fig.height=5, fig.width=7}
+nlplt
+```
+ 
+
+# Analysis
+
+### What is the relationship between public housing and brightness?
+To first see if there is any relationship between public housing and nighttime lighting overall in Boston, we start with a linear regression to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
+
+```{r, message=FALSE}
+dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
+dat %>% filter(ph > 0) %>% 
+  ggplot() + geom_point(aes(x = ph, y = radiance)) + 
+  geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
+  xlab("Percent public housing") + ylab("nWatts·cm−2·sr−1")
+```
+The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases.
 
 #USE THIS CHUNK FOR VERY LARGE SETS OF ANALYSIS
 ```{r, eval=FALSE}
