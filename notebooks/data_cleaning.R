@@ -32,8 +32,15 @@ bstnoutline <- st_union(bstn_tract) %>% st_buffer(dist = 0.0001) %>%
 saveRDS(bstntract, file = "~/GeoSpaAR/nightlightF22/data/bstn.rds")
 
 # SAN FRAN DATA CLEANING
+sanfran_pop_data <-  read_csv("notebooks/extdata/San_Francisco_Pop_data.csv")
 
-sf_pop <- read_csv("notebooks/extdata/San_Francisco_Pop_data.csv")
+sanfran_census_tract <- read_csv("notebooks/extdata/Census_2020__Tracts_for_San_Francisco.csv")
+
+sanfran_pop <-  left_join(x = pop_data, y = census_tract, by = "GEOID")
+
+readr :: write_csv(sanfran_pop, path = file.path("notebooks/extdata","Sanfran_popdata.csv"))
+
+sf_pop <- read_csv("notebooks/extdata/Sanfran_popdata.csv")
 saveRDS(sf_pop, file = "~/FinalProject_GeospatialAnalysisWithR/nightlightF22/data/sanfrisco_pop.rds")
 
 sf_ftprnt <- read_sf("C:/Users/leste/OneDrive/Documents/SF_buildingfootprint.geojson")
