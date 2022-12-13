@@ -19,6 +19,7 @@ library(dplyr)
 library(sf)
 library(ggplot2)
 library(here)
+library(tidyr)
 ```
 # Introduction
 
@@ -102,15 +103,6 @@ nlplt <- ggplot(as.data.frame(nlight_lt, xy = TRUE)) +
     guide = guide_colorbar(ticks = FALSE),
     type = "seq", direction = -1, palette = "Greys"
   ) + xlab('') + ylab('') + theme_void()
-
-nlplt_mo <- ggplot(as.data.frame(nlight_mo, xy = TRUE)) + 
-  geom_raster(aes(x = x, y = y, fill = brightness)) +
-  geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", 
-          col = "yellow", size = 0.2) +
-  scale_fill_distiller(
-    guide = guide_colorbar(ticks = FALSE),
-    type = "seq", direction = -1, palette = "Greys"
-  ) + xlab('') + ylab('') + theme_void()
 ```
 
 The image below is the average monthly brightness of Boston nightlights between the years 2012 - and 2021. 
@@ -130,9 +122,93 @@ dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
 dat %>% filter(ph > 0) %>% 
   ggplot() + geom_point(aes(x = ph, y = radiance)) + 
   geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
-  xlab("Percent public housing") + ylab("nWatts·cm−2·sr−1")
+  xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
 ```
-The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases.
+
+The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases. However, the regression does not account for differences in the building structures and population across the city that might be influencing factors on nighttime radiance. To see whether areas with public housing are more brightly lit than areas without public housing, we need to control for population and building square meters.  
+
+### Comparing areas with similar structure and population
+
+Ideally, we would compare similar areas based on pixel percentage of public housing, building structure, and population. However, our public housing grid shows that there is only a very small range of percentage of public housing across Boston (0-3.5%) so we will just group like areas in terms of building structure and population and compare just those groupings that have public housing and that don't.
+
+To group pixels with and without public housing in them according to levels defined by differing percentiles of building volume and population, we first create a cross-tabulation of the quantiles for both population and building area.
+
+```{r}
+# Get quantiles of population and building volume in pixels with public housing
+pop_quantiles <- dat %>% filter(ph > 0) %>% 
+  pull(population) %>% quantile(.)
+area_quantiles <- dat %>% pull(area_sqm) %>% quantile(.)
+
+# Assign quantile to each cell with public housing
+poparea <- dat %>% filter(ph > 0) %>% 
+  mutate(., pop_class = cut(population, pop_quantiles, include.lowest = TRUE, dig.lab = 4)) %>% 
+  mutate(., barea_class = cut(area_sqm, area_quantiles, include.lowest = TRUE, dig.lab = 6))
+
+# Create new table with quantiles of pop and area as x & y
+# showing count of each pixel for each combination of quantiles
+# Drop () & [] special characters from each column
+ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>% 
+  as.data.frame(.) %>% 
+  separate(., col = pop, into = c("pop_lower", "pop_upper"), sep = ",") %>% 
+  separate(., col = barea, into = c("barea_lower", "barea_upper"), sep = ",") %>%
+  mutate(., pop_lower = as.numeric(gsub('\\[|\\(', '', pop_lower))) %>% 
+  mutate(., pop_upper = as.numeric(gsub("\\]|\\)", "", pop_upper))) %>%
+  mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
+  mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
+  filter(., Freq > 1)
+```
+
+Now, we will group pixels with and without public housing into the combination of population and building area quantiles.
+```{r}
+# Select pixels with no public housing within the different combination
+# of population and building area quantiles
+no_ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  dat %>% filter(ph == 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "No public housing")
+}) %>% bind_rows()
+
+# Select pixels with public housing into the same categories 
+ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  dat %>% filter(ph > 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "Public housing")
+  }) %>% bind_rows()
+
+# combine into single table 
+combined <- bind_rows(ph_dat, no_ph_dat)
+```
+
+Having prepared the data, we can now look at the differences using box plots to compare the differences between pixels with public housing to those that don't, grouped according to the population and building volume levels
+
+```{r}
+p <- ggplot(combined) + 
+  geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
+  scale_color_manual(values = c('red', 'blue')) +
+  scale_fill_manual(values = alpha(c('red', 'blue'), 0.3)) +
+  xlab("Population/Building Area Class") + ylab("Radiance in nWatts·cm−2·sr−1") +
+  theme_linedraw() #+
+p
+```
+We can see in the box plots that 7 of the 11 population/building area classes show pixels containing public housing are more brightly lit than those without public housing.Let's calculate the averages:
+
+```{r, message=FALSE}
+rad_stats <- combined %>%
+  group_by(Group, Level) %>% 
+  summarize(Radiance = median(radiance)) %>% ungroup() %>% 
+  pivot_wider(names_from = Group, values_from = Radiance) %>% 
+  mutate(Difference = `Public housing` - `No public housing`)
+
+knitr::kable(rad_stats, digits = 0)
+```
+
+That compares the median difference between the two groups at each level.  
+
+
 
 #USE THIS CHUNK FOR VERY LARGE SETS OF ANALYSIS
 ```{r, eval=FALSE}
