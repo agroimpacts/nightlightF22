@@ -71,7 +71,7 @@ phplt <- ggplot() +
   labs(fill = "Public Housing Developments") + 
   theme(legend.position = c(0.2, 0.9)) 
 ggsave(phplt, file = here("vignettes/figures/bstn_housing.png"), 
-       height = 7, width = 7, dpi = 300)
+       height = 7, width = 10, dpi = 72)
 ```
 
 The map below shows Boston's public housing developments, a total of 53 developments.
@@ -82,10 +82,11 @@ knitr::include_graphics(here("vignettes/figures/bstn_housing.png"))
 
 In order to compare areas with similar building structure and populations with and without public housing, we will use the gridded public housing coverage data combined with the gridded datasets for population and estimated square meters of buildings in Boston, which provides an estimate of the living space and structure of the city's built environment.
 
-```{r, fig.height=4, fig.width=9}
+```{r, fig.height=4, fig.width=7}
 rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_lt, bstn_pop))
 names(rs) <- c("ph", "area_sqm", "population", 
                "radiance")
+par(oma=c(0,0,0,3))
 plot(rs, nc = 2, axes = FALSE,
      main = c("% Public housing", "Building Area (SqM)", "Population", 
               "Nighttime radiance"))
@@ -117,7 +118,7 @@ nlplt
 ### What is the relationship between public housing and brightness?
 To first see if there is any relationship between public housing and nighttime lighting overall in Boston, we start with a linear regression to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
 
-```{r, message=FALSE}
+```{r, message=FALSE, fig.width=7}
 dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
 dat %>% filter(ph > 0) %>% 
   ggplot() + geom_point(aes(x = ph, y = radiance)) + 
@@ -185,7 +186,7 @@ combined <- bind_rows(ph_dat, no_ph_dat)
 
 Having prepared the data, we can now look at the differences using box plots to compare the differences between pixels with public housing to those that don't, grouped according to the population and building volume levels
 
-```{r}
+```{r, fig.width=7}
 p <- ggplot(combined) + 
   geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
   scale_color_manual(values = c('red', 'blue')) +
@@ -206,17 +207,4 @@ rad_stats <- combined %>%
 knitr::kable(rad_stats, digits = 0)
 ```
 
-That compares the median difference between the two groups at each level.  
-
-
-
-#USE THIS CHUNK FOR VERY LARGE SETS OF ANALYSIS
-```{r, eval=FALSE}
-
-```
-#USE THIS CHUNK TO INSERT GRAPHICS
-```{r, echo=FALSE}
-knitr::include_graphics(
-  here::here("vignettes/figures/IMAGENAMEHERE")
-)
-```
+That compares the median difference between the two groups at each level, which shows some large brightness differences in each category.
