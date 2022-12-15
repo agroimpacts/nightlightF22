@@ -40,7 +40,6 @@ We will be using the following datasets for our analysis:
 ```{r}
 # Boston Census tracts & outline
 bstntract <- readRDS(here("data/bstn_tract.rds"))
-bstn <- readRDS(here("data/bstn.rds"))
 
 # Boston public housing developments & grid
 bstn_ph <- readRDS(here("data/bstn_phpoly.rds"))
@@ -208,3 +207,83 @@ knitr::kable(rad_stats, digits = 0)
 ```
 
 That compares the median difference between the two groups at each level, which shows some large brightness differences in each category.
+
+What if we wanted to look at a subset of our time series data and just look at the months with highest brightness? In Boston, December, January, and February have the highest long-term radiance. We can average those three months and run the same analysis as before.
+
+```{r, message=FALSE, echo=FALSE}
+nlight_winter <- nlight_mo %>% subset(c(12, 1, 2)) %>% mean()
+names(nlight_winter) <- 'radiance'
+rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_winter, bstn_pop))
+names(rs) <- c("ph", "area_sqm", "population", 
+               "radiance")
+
+# Get quantiles of population and building volume in pixels with public housing
+pop_quantiles <- dat %>% filter(ph > 0) %>% 
+  pull(population) %>% quantile(.)
+area_quantiles <- dat %>% pull(area_sqm) %>% quantile(.)
+
+# Assign quantile to each cell with public housing
+poparea <- dat %>% filter(ph > 0) %>% 
+  mutate(., pop_class = cut(population, pop_quantiles, include.lowest = TRUE, dig.lab = 4)) %>% 
+  mutate(., barea_class = cut(area_sqm, area_quantiles, include.lowest = TRUE, dig.lab = 6))
+
+# Create new table with quantiles of pop and area as x & y
+# showing count of each pixel for each combination of quantiles
+# Drop () & [] special characters from each column
+ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>% 
+  as.data.frame(.) %>% 
+  separate(., col = pop, into = c("pop_lower", "pop_upper"), sep = ",") %>% 
+  separate(., col = barea, into = c("barea_lower", "barea_upper"), sep = ",") %>%
+  mutate(., pop_lower = as.numeric(gsub('\\[|\\(', '', pop_lower))) %>% 
+  mutate(., pop_upper = as.numeric(gsub("\\]|\\)", "", pop_upper))) %>%
+  mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
+  mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
+  filter(., Freq > 1)
+# Select pixels with no public housing within the different combination
+# of population and building area quantiles
+no_ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  dat %>% filter(ph == 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "No public housing")
+}) %>% bind_rows()
+
+# Select pixels with public housing into the same categories 
+ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  dat %>% filter(ph > 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "Public housing")
+  }) %>% bind_rows()
+
+# combine into single table 
+combined <- bind_rows(ph_dat, no_ph_dat)
+```
+Box-plots of Public-Housing and Non-Public Housing NightLights in December-February
+```{r}
+p <- ggplot(combined) + 
+  geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
+  scale_color_manual(values = c('red', 'blue')) +
+  scale_fill_manual(values = alpha(c('red', 'blue'), 0.3)) +
+  xlab("Population/Building Area Class") + ylab("Radiance in nWatts·cm−2·sr−1") +
+  theme_linedraw() #+
+p
+```
+
+Median Difference of Public-Housing and Non-Public Housing NightLights in December-February
+```{r}
+rad_stats <- combined %>%
+  group_by(Group, Level) %>% 
+  summarize(Radiance = median(radiance)) %>% ungroup() %>% 
+  pivot_wider(names_from = Group, values_from = Radiance) %>% 
+  mutate(Difference = `Public housing` - `No public housing`)
+
+knitr::kable(rad_stats, digits = 0)
+```
+
+While we can see some more accentuated differences in brightness between areas with and without public housing, the overall trend remains the same.
+
+
+
