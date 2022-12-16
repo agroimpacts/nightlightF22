@@ -20,23 +20,28 @@ library(sf)
 library(ggplot2)
 library(here)
 library(tidyr)
+library(knitr)
 ```
 # Introduction
+Increasing nighttime lighting (also referred to as street lighting) is a tool used be police as a strategy for reducing crime across. We have seen historical examples of this such as Boston’s Operation Night Light in the mid-1990s  and a plan in London to install over 3000 street lights in the 1980s  as well as contemporary initiatives such as floodlights installed by the New York Police Department in NYC in 2015  and Dallas’ 2021 public safety plan that includes the installation of new street lights.  Despite this being a popular tool used by police departments, the evidence around the impact of street lighting on crime prevention is highly mixed and there are several studies which suggest that increased nighttime lights has no impact and, in come cases, even increases crime.
 
+This project is a follow-on to a proof-of-concept project looking at the feasibility of detecting police surveillance floodlights in New York City using the NASA Black Marble nighttime lights products. In our effort to further expand on this work, we look at two new case studies—Boston and San Francisco—to explore the relationship between nighttime radiance and the presence of public housing in the two study areas. Our aim is to find whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in Boston and San Francisco between 2012-2020. The overall project objectives are to:
 
+1. Evaluate any correlation between brightly lit neighborhoods and neighborhoods with public housing across our two study areas.
+2. Further assess the feasibility of nightlight imagery to find differences of excessively lit neighborhood and those which are not, building on the New York City study. 
 
-## Datasets
+This vignette covers the analysis of the Boston case study. In it, median nighttime brightness is compared in areas with and without public housing in Boston with similar building structure and population by using gridded datasets of population from US Census data and building area in square meters as an estimate for living space. In addition to looking at the 10-year average radiance, we also compare radiance using the average of the brightest months in Boston- December through February. 
 
-We will be using the following datasets for our analysis:
+# Data & Methods
+## Data
 
-- A set of images representing the time series of monthly night lights data over Boston covering the period 2012-2021, as well as the monthly average over the period and the average of each month during the 10 year period This data comes from the VNP46A3 - VIIRS Monthly Nighttime Lights, which are a part of NASA’s Black Marble Nighttime Lights Product Suite.  
-- Vector file of public housing locations in Boston
-- Gridded data of the proportion of public housing across Boston
-- Census tracts for Boston
-- Gridded population of Boston
-- Building footprints for Boston
-- Gridded data of the square meters of buildings in Boston, used to approximate living space
-
+The following datasets are used in this case study:
+```{r}
+datasets <- read.csv(here("data/boston_datasets.csv"))
+kable(datasets, col.names = c("Data", "Source", "Description")) %>%
+  kableExtra::kable_minimal()
+```
+All data were projected into the NAD83 - Massachusetts Mainland ESPG:26986 coordinate system. Additionally, nightlight data were transformed from h5 files to geotiff using a python script and the monthly and long-term means were calculated.
 ```{r}
 # Boston Census tracts & outline
 bstntract <- readRDS(here("data/bstn_tract.rds"))
@@ -61,7 +66,6 @@ nl_dates <- readRDS(here("data/Boston_nightlight_dates.rds"))
 ```
 
 # Public Housing 
-
 ```{r, echo=FALSE, eval=FALSE}
 phplt <- ggplot() +
   geom_sf(data = bstntract, col = alpha("grey7", 0.3), fill = "grey") +
@@ -261,6 +265,7 @@ ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
 # combine into single table 
 combined <- bind_rows(ph_dat, no_ph_dat)
 ```
+
 Box-plots of Public-Housing and Non-Public Housing NightLights in December-February
 ```{r}
 p <- ggplot(combined) + 
