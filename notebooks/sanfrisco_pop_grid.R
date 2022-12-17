@@ -16,5 +16,6 @@ sanfrisco_pop <- readRDS(here("data/sanfrisco_pop.RDS"))
 sanfrisco_ph <- readRDS(here("data/sf_ph.RDS"))
 sanfrisco_bldg <- readRDS(here("data/sf_buildings.RDS"))
 
+# Intersect Public Housing locations with Buildings to get Public Housing as polygons
 
 

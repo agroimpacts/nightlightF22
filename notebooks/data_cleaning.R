@@ -40,11 +40,16 @@ saveRDS(sanfran_pop_data, file = "~/FinalProject_GeospatialAnalysisWithR/nightli
 
 sf_ph <- read_csv("notebooks/extdata/publichousing_SanFrancisco.csv")
 
-sf_ftprnt <- read_sf("C:/Users/leste/OneDrive/Documents/SF_buildingfootprint.geojson")
-saveRDS(sf_ftprnt, file = "~/GeoSpaAR/nightlightF22/data/sf_buildings.rds")
+sf_ph <- st_as_sf(sf_ph, coords = c("Long", "Lat"), crs = 4326) %>%
+         st_transform(crs = 3310)
+saveRDS(sf_ph,file = "data/sf_ph.rds")
 
-sf_tract <- read_sf("~/GeoSpaAR/nightlightF22/notebooks/extdata/SanFrancisco_2020census.geojson")
-saveRDS(sf_tract, file = "~/GeoSpaAR/nightlightF22/data/sf_tract.rds")
+sf_ftprnt <- read_sf("notebooks/extdata/SF_buildingfootprint.geojson")  %>%  st_transform(crs = 4326) %>% st_transform(crs = 3310)
+saveRDS(sf_ftprnt, file = "data/sf_buildings.rds")
 
-sf_grid<- raster("~/GeoSpaAR/nightlightF22/notebooks/extdata/SF_gridpop_2010.tif")
-saveRDS(sf_grid, file = "~/GeoSpaAR/nightlightF22/data/sf_grid.rds")
+sf_tract <- read_sf("notebooks/extdata/SanFrancisco_2020census.geojson") %>% st_transform(crs = 3310)
+saveRDS(sf_tract, file = "data/sf_tract.rds")
+
+sf_use_s2(FALSE)
+sfoutline <- st_union(sf_tract) %>% st_buffer(dist = 0.0001) %>%
+  rmapshaper::ms_simplify(.)
