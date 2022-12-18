@@ -53,3 +53,6 @@ saveRDS(sf_tract, file = "data/sf_tract.rds")
 sf_use_s2(FALSE)
 sfoutline <- st_union(sf_tract) %>% st_buffer(dist = 0.0001) %>%
   rmapshaper::ms_simplify(.)
+
+sanfran <- sfoutline %>% st_transform(3310)
+saveRDS(sanfran, file = "data/sf.rds")
