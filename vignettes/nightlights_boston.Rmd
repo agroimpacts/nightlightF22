@@ -168,28 +168,36 @@ combined <- bind_rows(ph_dat, no_ph_dat)
 ### What is the relationship between public housing and brightness?
 To first see if there is any relationship between public housing and nighttime lighting overall in Boston, we start with a linear regression to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
 
-```{r, message=FALSE, fig.width=7}
-dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
-dat %>% filter(ph > 0) %>% 
+```{r, echo=FALSE, eval=FALSE}
+regressplt <- dat %>% filter(ph > 0) %>% 
   ggplot() + geom_point(aes(x = ph, y = radiance)) + 
   geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
   xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
+ggsave(regressplt,file = here("vignettes/figures/regression.png"), width = 7)
 ```
 
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/regression.png"))
+```
 The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases. However, the regression does not account for differences in the building structures and population across the city that might be influencing factors on nighttime radiance. To see whether areas with public housing are more brightly lit than areas without public housing, we need to control for population and building square meters.  
 
 
 
 Having prepared the data, we can now look at the differences using box plots to compare the differences between pixels with public housing to those that don't, grouped according to the population and building volume levels
 
-```{r, fig.width=7}
-p <- ggplot(combined) + 
+```{r, echo=FALSE, eval=FALSE}
+bxplt <- ggplot(combined) + 
   geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
   scale_color_manual(values = c('red', 'blue')) +
   scale_fill_manual(values = alpha(c('red', 'blue'), 0.3)) +
   xlab("Population/Building Area Class") + ylab("Radiance in nWatts·cm−2·sr−1") +
-  theme_linedraw() #+
-p
+  theme_linedraw()
+ggsave(bxplt, file = here("vignettes/figures/ltmean_boxplot.png"), 
+       height = 7, width = 10, dpi = 72, bg = "grey")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/ltmean_boxplot.png"))
 ```
 We can see in the box plots that 7 of the 11 population/building area classes show pixels containing public housing are more brightly lit than those without public housing.Let's calculate the averages:
 
