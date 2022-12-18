@@ -23,7 +23,7 @@ library(tidyr)
 library(knitr)
 ```
 # Introduction
-Increasing nighttime lighting (also referred to as street lighting) is a tool used be police as a strategy for reducing crime across. We have seen historical examples of this such as Boston’s Operation Night Light in the mid-1990s  and a plan in London to install over 3000 street lights in the 1980s  as well as contemporary initiatives such as floodlights installed by the New York Police Department in NYC in 2015  and Dallas’ 2021 public safety plan that includes the installation of new street lights.  Despite this being a popular tool used by police departments, the evidence around the impact of street lighting on crime prevention is highly mixed and there are several studies which suggest that increased nighttime lights has no impact and, in come cases, even increases crime.
+Increasing nighttime lighting (also referred to as street lighting) is a tool used be police as a strategy for reducing crime across. We have seen historical examples of this such as Boston’s Operation Night Light in the mid-1990s^i^ and a plan in London to install over 3000 street lights in the 1980s^ii^  as well as contemporary initiatives such as floodlights installed by the New York Police Department in NYC in 2015^iii^  and Dallas’ 2021 public safety plan that includes the installation of new street lights.^iv^  Despite this being a popular tool used by police departments, the evidence around the impact of street lighting on crime prevention is highly mixed and there are several studies which suggest that increased nighttime lights has no impact and, in come cases, even increases crime.^v^
 
 This project is a follow-on to a proof-of-concept project looking at the feasibility of detecting police surveillance floodlights in New York City using the NASA Black Marble nighttime lights products. In our effort to further expand on this work, we look at two new case studies—Boston and San Francisco—to explore the relationship between nighttime radiance and the presence of public housing in the two study areas. Our aim is to find whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in Boston and San Francisco between 2012-2020. The overall project objectives are to:
 
@@ -36,12 +36,12 @@ This vignette covers the analysis of the Boston case study. In it, median nightt
 ## Data
 
 The following datasets are used in this case study:
-```{r}
+```{r, echo=FALSE}
 datasets <- read.csv(here("data/boston_datasets.csv"))
 kable(datasets, col.names = c("Data", "Source", "Description")) %>%
   kableExtra::kable_minimal()
 ```
-All data were projected into the NAD83 - Massachusetts Mainland ESPG:26986 coordinate system. Additionally, nightlight data were transformed from h5 files to geotiff using a python script and the monthly and long-term means were calculated.
+All data were projected into the NAD83 - Massachusetts Mainland ESPG:26986 coordinate system. 
 ```{r}
 # Boston Census tracts & outline
 bstntract <- readRDS(here("data/bstn_tract.rds"))
@@ -65,23 +65,32 @@ names(nlight_lt) <- "brightness"
 nl_dates <- readRDS(here("data/Boston_nightlight_dates.rds"))
 ```
 
-# Public Housing 
-```{r, echo=FALSE, eval=FALSE}
-phplt <- ggplot() +
-  geom_sf(data = bstntract, col = alpha("grey7", 0.3), fill = "grey") +
-  geom_sf(data = bstn_ph, aes(fill = ''), col = "red", 
-          show.legend = "polygon") +
-  labs(fill = "Public Housing Developments") + 
-  theme(legend.position = c(0.2, 0.9)) 
-ggsave(phplt, file = here("vignettes/figures/bstn_housing.png"), 
-       height = 7, width = 10, dpi = 72)
-```
+## Methods
+The methods can be split into roughly 3 sections: data pre-processing, grouping areas in Boston with similar building structure and population, and comparing the median difference in nighttime radiance in areas with and without public housing. For the pre-processing, the nightlight data were first transformed from h5 files to geotiffs using a python script (see [transformhd5_debugged.py notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/transformhd5_debugged.py) for script and the monthly and long-term means were calculated and saved as Spatial Raster objects (see [nightlights_processing.R notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/nightlights_processing.R) for script).
 
-The map below shows Boston's public housing developments, a total of 53 developments.
+Here, we can see the average brightness of Boston nightlights between the years 2012 - and 2021. 
 
 ```{r, echo=FALSE}
-knitr::include_graphics(here("vignettes/figures/bstn_housing.png"))
+nlplt <- ggplot(as.data.frame(nlight_lt, xy = TRUE)) + 
+  geom_raster(aes(x = x, y = y, fill = brightness)) +
+  geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", 
+          col = "yellow", size = 0.2) +
+  scale_fill_distiller(
+    guide = guide_colorbar(ticks = FALSE),
+    type = "seq", direction = -1, palette = "Greys"
+  ) + xlab('') + ylab('') + theme_void()
+ggsave(nlplt, file = here("vignettes/figures/bstn_ltnl.png"), 
+       height = 7, width = 10, dpi = 72, bg = "grey")
 ```
+
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/bstn_ltnl.png"))
+```
+
+
+Next, gridded datasets were created for public housing percentage, population, and building structure. For all three, empty rasters were created, matching the properties to the nightlight data and then masked to Boston. For public housing, the fraction of public housing developments within each pixel was calculated to get a dataset. For population, the grid was intersected with census tracts and the population within each intersected area was calculated. Finally, the square area of buildings from the building footprint dataset was used to approximate living space so, similar to the population grid, the building footprints were intersected with the grid and the total square area in each intersected area was calculated. Scripts for this step can be found here: [boston_pop_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/boston_pop_grid.R) and [bstn_building_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/bstn_building_grid.R). 
+
 
 In order to compare areas with similar building structure and populations with and without public housing, we will use the gridded public housing coverage data combined with the gridded datasets for population and estimated square meters of buildings in Boston, which provides an estimate of the living space and structure of the city's built environment.
 
@@ -98,22 +107,7 @@ plot(rs, nc = 2, axes = FALSE,
 
 # Nightlights
 
-```{r, echo=FALSE}
-nlplt <- ggplot(as.data.frame(nlight_lt, xy = TRUE)) + 
-  geom_raster(aes(x = x, y = y, fill = brightness)) +
-  geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", 
-          col = "yellow", size = 0.2) +
-  scale_fill_distiller(
-    guide = guide_colorbar(ticks = FALSE),
-    type = "seq", direction = -1, palette = "Greys"
-  ) + xlab('') + ylab('') + theme_void()
-```
 
-The image below is the average monthly brightness of Boston nightlights between the years 2012 - and 2021. 
-
-```{r, echo=FALSE, fig.height=5, fig.width=7}
-nlplt
-```
  
 
 # Analysis
@@ -267,7 +261,7 @@ combined <- bind_rows(ph_dat, no_ph_dat)
 ```
 
 Box-plots of Public-Housing and Non-Public Housing NightLights in December-February
-```{r}
+```{r, fig.width=7}
 p <- ggplot(combined) + 
   geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
   scale_color_manual(values = c('red', 'blue')) +
