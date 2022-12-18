@@ -89,49 +89,32 @@ knitr::include_graphics(here("vignettes/figures/bstn_ltnl.png"))
 ```
 
 
-Next, gridded datasets were created for public housing percentage, population, and building structure. For all three, empty rasters were created, matching the properties to the nightlight data and then masked to Boston. For public housing, the fraction of public housing developments within each pixel was calculated to get a dataset. For population, the grid was intersected with census tracts and the population within each intersected area was calculated. Finally, the square area of buildings from the building footprint dataset was used to approximate living space so, similar to the population grid, the building footprints were intersected with the grid and the total square area in each intersected area was calculated. Scripts for this step can be found here: [boston_pop_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/boston_pop_grid.R) and [bstn_building_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/bstn_building_grid.R). 
+Next, gridded datasets were created for public housing percentage, population, and building structure. For all three, empty rasters were created, matching the properties to the nightlight data and then masked to Boston. For public housing, the fraction of public housing developments within each pixel was calculated to get a dataset. For population, the grid was intersected with census tracts and the population within each intersected area was calculated. Finally, the square area of buildings from the building footprint dataset was used to approximate living space so, similar to the population grid, the building footprints were intersected with the grid and the total square area in each intersected area was calculated. Scripts for these steps can be found here: [boston_pop_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/boston_pop_grid.R) and [bstn_building_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/bstn_building_grid.R). 
 
+In order to account for how different characteristics of the urban environment might impact the nighttime brightness, we grouped the nightlight data based on building structure and population to compare brightness by like areas. In order to do this, the four gridded datasets are stacked:
 
-In order to compare areas with similar building structure and populations with and without public housing, we will use the gridded public housing coverage data combined with the gridded datasets for population and estimated square meters of buildings in Boston, which provides an estimate of the living space and structure of the city's built environment.
-
-```{r, fig.height=4, fig.width=7}
+```{r}
 rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_lt, bstn_pop))
 names(rs) <- c("ph", "area_sqm", "population", 
                "radiance")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+png(here("vignettes/figures/gridstack.png"))
 par(oma=c(0,0,0,3))
-plot(rs, nc = 2, axes = FALSE,
+stackplt <- plot(rs, nc = 2, axes = FALSE,
      main = c("% Public housing", "Building Area (SqM)", "Population", 
               "Nighttime radiance"))
+dev.off()
 ```
 
-
-# Nightlights
-
-
- 
-
-# Analysis
-
-### What is the relationship between public housing and brightness?
-To first see if there is any relationship between public housing and nighttime lighting overall in Boston, we start with a linear regression to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
-
-```{r, message=FALSE, fig.width=7}
-dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
-dat %>% filter(ph > 0) %>% 
-  ggplot() + geom_point(aes(x = ph, y = radiance)) + 
-  geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
-  xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/gridstack.png"))
 ```
-
-The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases. However, the regression does not account for differences in the building structures and population across the city that might be influencing factors on nighttime radiance. To see whether areas with public housing are more brightly lit than areas without public housing, we need to control for population and building square meters.  
-
-### Comparing areas with similar structure and population
-
-Ideally, we would compare similar areas based on pixel percentage of public housing, building structure, and population. However, our public housing grid shows that there is only a very small range of percentage of public housing across Boston (0-3.5%) so we will just group like areas in terms of building structure and population and compare just those groupings that have public housing and that don't.
-
-To group pixels with and without public housing in them according to levels defined by differing percentiles of building volume and population, we first create a cross-tabulation of the quantiles for both population and building area.
+To do this grouping, the quantiles for building area and population in pixels with public housing is calculated. The quantile values are then cross-tabulated to get a table of each combination of population group and building area levels.
 
 ```{r}
+dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
 # Get quantiles of population and building volume in pixels with public housing
 pop_quantiles <- dat %>% filter(ph > 0) %>% 
   pull(population) %>% quantile(.)
@@ -156,7 +139,7 @@ ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>%
   filter(., Freq > 1)
 ```
 
-Now, we will group pixels with and without public housing into the combination of population and building area quantiles.
+Once the levels are formed, pixels in the public housing percentage grid are first split into those that have public housing developments and those that do not. Then, each group assigned to one the building structure/population levels and the results are combined back into one tibble.
 ```{r}
 # Select pixels with no public housing within the different combination
 # of population and building area quantiles
@@ -180,6 +163,22 @@ ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
 # combine into single table 
 combined <- bind_rows(ph_dat, no_ph_dat)
 ```
+# Analysis
+
+### What is the relationship between public housing and brightness?
+To first see if there is any relationship between public housing and nighttime lighting overall in Boston, we start with a linear regression to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
+
+```{r, message=FALSE, fig.width=7}
+dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
+dat %>% filter(ph > 0) %>% 
+  ggplot() + geom_point(aes(x = ph, y = radiance)) + 
+  geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
+  xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
+```
+
+The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases. However, the regression does not account for differences in the building structures and population across the city that might be influencing factors on nighttime radiance. To see whether areas with public housing are more brightly lit than areas without public housing, we need to control for population and building square meters.  
+
+
 
 Having prepared the data, we can now look at the differences using box plots to compare the differences between pixels with public housing to those that don't, grouped according to the population and building volume levels
 
