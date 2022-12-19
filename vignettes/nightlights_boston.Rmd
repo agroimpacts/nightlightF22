@@ -22,26 +22,9 @@ library(here)
 library(tidyr)
 library(knitr)
 ```
-# Introduction
-Increasing nighttime lighting (also referred to as street lighting) is a tool used be police as a strategy for reducing crime across. We have seen historical examples of this such as Boston’s Operation Night Light in the mid-1990s^i^ and a plan in London to install over 3000 street lights in the 1980s^ii^  as well as contemporary initiatives such as floodlights installed by the New York Police Department in NYC in 2015^iii^  and Dallas’ 2021 public safety plan that includes the installation of new street lights.^iv^  Despite this being a popular tool used by police departments, the evidence around the impact of street lighting on crime prevention is highly mixed and there are several studies which suggest that increased nighttime lights has no impact and, in come cases, even increases crime.^v^
 
-This project is a follow-on to a proof-of-concept project looking at the feasibility of detecting police surveillance floodlights in New York City using the NASA Black Marble nighttime lights products. In our effort to further expand on this work, we look at two new case studies—Boston and San Francisco—to explore the relationship between nighttime radiance and the presence of public housing in the two study areas. Our aim is to find whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in Boston and San Francisco between 2012-2020. The overall project objectives are to:
-
-1. Evaluate any correlation between brightly lit neighborhoods and neighborhoods with public housing across our two study areas.
-2. Further assess the feasibility of nightlight imagery to find differences of excessively lit neighborhood and those which are not, building on the New York City study. 
 
 This vignette covers the analysis of the Boston case study. In it, median nighttime brightness is compared in areas with and without public housing in Boston with similar building structure and population by using gridded datasets of population from US Census data and building area in square meters as an estimate for living space. In addition to looking at the 10-year average radiance, we also compare radiance using the average of the brightest months in Boston- December through February. 
-
-# Data & Methods
-## Data
-
-The following datasets are used in this case study:
-```{r, echo=FALSE}
-datasets <- read.csv(here("data/boston_datasets.csv"))
-kable(datasets, col.names = c("Data", "Source", "Description")) %>%
-  kableExtra::kable_minimal()
-```
-All data were projected into the NAD83 - Massachusetts Mainland ESPG:26986 coordinate system. 
 ```{r}
 # Boston Census tracts & outline
 bstntract <- readRDS(here("data/bstn_tract.rds"))
@@ -65,12 +48,14 @@ names(nlight_lt) <- "brightness"
 nl_dates <- readRDS(here("data/Boston_nightlight_dates.rds"))
 ```
 
-## Methods
-The methods can be split into roughly 3 sections: data pre-processing, grouping areas in Boston with similar building structure and population, and comparing the median difference in nighttime radiance in areas with and without public housing. For the pre-processing, the nightlight data were first transformed from h5 files to geotiffs using a python script (see [transformhd5_debugged.py notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/transformhd5_debugged.py) for script and the monthly and long-term means were calculated and saved as Spatial Raster objects (see [nightlights_processing.R notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/nightlights_processing.R) for script).
-
-Here, we can see the average brightness of Boston nightlights between the years 2012 - and 2021. 
+In Boston, there were 53 public housing developments, shown in the map below:
 
 ```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/bstn_housing.png"))
+```
+ 
+Here, we can also see the average brightness of Boston nightlights between the years 2012 - and 2021.
+```{r, echo=FALSE, eval=FALSE}
 nlplt <- ggplot(as.data.frame(nlight_lt, xy = TRUE)) + 
   geom_raster(aes(x = x, y = y, fill = brightness)) +
   geom_sf(data = bstntract %>% st_transform(crs = 4326), fill = "transparent", 
@@ -89,31 +74,13 @@ knitr::include_graphics(here("vignettes/figures/bstn_ltnl.png"))
 ```
 
 
-Next, gridded datasets were created for public housing percentage, population, and building structure. For all three, empty rasters were created, matching the properties to the nightlight data and then masked to Boston. For public housing, the fraction of public housing developments within each pixel was calculated to get a dataset. For population, the grid was intersected with census tracts and the population within each intersected area was calculated. Finally, the square area of buildings from the building footprint dataset was used to approximate living space so, similar to the population grid, the building footprints were intersected with the grid and the total square area in each intersected area was calculated. Scripts for these steps can be found here: [boston_pop_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/boston_pop_grid.R) and [bstn_building_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/bstn_building_grid.R). 
-
-In order to account for how different characteristics of the urban environment might impact the nighttime brightness, we grouped the nightlight data based on building structure and population to compare brightness by like areas. In order to do this, the four gridded datasets are stacked:
-
-```{r}
+```{r, echo=FALSE}
+# HERE WE ARE RUNNING THE ANALYSIS STEPS DESCRIBED IN NIGHTLIGHTS_INTRO.RMD
+# ECHO IS FALSE SINCE THE CODE CHUNKS ARE SHOWN IN INTRO MARKDOWN
 rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_lt, bstn_pop))
 names(rs) <- c("ph", "area_sqm", "population", 
                "radiance")
-```
 
-```{r, echo=FALSE, eval=FALSE}
-png(here("vignettes/figures/gridstack.png"))
-par(oma=c(0,0,0,3))
-stackplt <- plot(rs, nc = 2, axes = FALSE,
-     main = c("% Public housing", "Building Area (SqM)", "Population", 
-              "Nighttime radiance"))
-dev.off()
-```
-
-```{r, echo=FALSE}
-knitr::include_graphics(here("vignettes/figures/gridstack.png"))
-```
-To do this grouping, the quantiles for building area and population in pixels with public housing is calculated. The quantile values are then cross-tabulated to get a table of each combination of population group and building area levels.
-
-```{r}
 dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
 # Get quantiles of population and building volume in pixels with public housing
 pop_quantiles <- dat %>% filter(ph > 0) %>% 
@@ -137,10 +104,7 @@ ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>%
   mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
   mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
   filter(., Freq > 1)
-```
 
-Once the levels are formed, pixels in the public housing percentage grid are first split into those that have public housing developments and those that do not. Then, each group assigned to one the building structure/population levels and the results are combined back into one tibble.
-```{r}
 # Select pixels with no public housing within the different combination
 # of population and building area quantiles
 no_ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
@@ -163,27 +127,29 @@ ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
 # combine into single table 
 combined <- bind_rows(ph_dat, no_ph_dat)
 ```
-# Analysis
 
-### What is the relationship between public housing and brightness?
-To first see if there is any relationship between public housing and nighttime lighting overall in Boston, we start with a linear regression to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
+
+To first see if there is any relationship between public housing and nighttime lighting overall in Boston, a simple linear regression is run to compare the change in radiance against increasing percentages of public housing in each nightlights pixel. 
 
 ```{r, echo=FALSE, eval=FALSE}
 regressplt <- dat %>% filter(ph > 0) %>% 
   ggplot() + geom_point(aes(x = ph, y = radiance)) + 
   geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
   xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
-ggsave(regressplt,file = here("vignettes/figures/regression.png"), width = 7)
+ggsave(regressplt,file = here("vignettes/figures/regression.png"),
+       width = 10, dpi = 72)
 ```
 
 ```{r, echo=FALSE}
 knitr::include_graphics(here("vignettes/figures/regression.png"))
 ```
-The plot shows a large amount of variability, but an overall increase in brightness as the proportion of public housing in a grid cell increases. However, the regression does not account for differences in the building structures and population across the city that might be influencing factors on nighttime radiance. To see whether areas with public housing are more brightly lit than areas without public housing, we need to control for population and building square meters.  
+
+The plot shows a large amount of variability as well as an outlier that is likely making the trend appear stronger than it may be. Overall though, it reflects an increase in brightness as the proportion of public housing in a grid cell increases. However, the regression does not account for differences in the building structures and population across the city that might be influencing factors on nighttime radiance. To see whether areas with public housing are more brightly lit than areas without public housing, we need to control for population and total building area.  
 
 
+# Long-Term Average
+The following figure is a box plot comparing areas in Boston with public housing to those without but that have similar building structure and population. 
 
-Having prepared the data, we can now look at the differences using box plots to compare the differences between pixels with public housing to those that don't, grouped according to the population and building volume levels
 
 ```{r, echo=FALSE, eval=FALSE}
 bxplt <- ggplot(combined) + 
@@ -192,38 +158,56 @@ bxplt <- ggplot(combined) +
   scale_fill_manual(values = alpha(c('red', 'blue'), 0.3)) +
   xlab("Population/Building Area Class") + ylab("Radiance in nWatts·cm−2·sr−1") +
   theme_linedraw()
-ggsave(bxplt, file = here("vignettes/figures/ltmean_boxplot.png"), 
-       height = 7, width = 10, dpi = 72, bg = "grey")
+ggsave(bxplt, file = here("vignettes/figures/bstn_ltmean_boxplot.png"), 
+       height = 4, width = 10, dpi = 72)
 ```
 
 ```{r, echo=FALSE}
-knitr::include_graphics(here("vignettes/figures/ltmean_boxplot.png"))
+knitr::include_graphics(here("vignettes/figures/bstn_ltmean_boxplot.png"))
 ```
-We can see in the box plots that 7 of the 11 population/building area classes show pixels containing public housing are more brightly lit than those without public housing.Let's calculate the averages:
+We can see in the box plots that 7 of the 11 population/building area classes show pixels containing public housing are more brightly lit than those without public housing. The following table shows the median brightness for the public housing and non-public housing groups and the median difference in brightness. Here we can see that areas in Boston with public housing developments are largely more brightly lit than areas without public housing. Of the 4 areas where that trend does not hold up, 2 of them, the Level 3 and 4 groupings, have a fairly small median difference.
 
 ```{r, message=FALSE}
 rad_stats <- combined %>%
   group_by(Group, Level) %>% 
   summarize(Radiance = median(radiance)) %>% ungroup() %>% 
   pivot_wider(names_from = Group, values_from = Radiance) %>% 
-  mutate(Difference = `Public housing` - `No public housing`)
-
-knitr::kable(rad_stats, digits = 0)
+  mutate('Median Difference' = `Public housing` - `No public housing`)
+```
+```{r, echo=FALSE}
+knitr::kable(rad_stats, digits = 0) %>% kableExtra::kable_minimal()
 ```
 
-That compares the median difference between the two groups at each level, which shows some large brightness differences in each category.
 
-What if we wanted to look at a subset of our time series data and just look at the months with highest brightness? In Boston, December, January, and February have the highest long-term radiance. We can average those three months and run the same analysis as before.
+# Brightest Months
+
+For the second part of the analysis, we look at just the brightest months in the time series. For Boston, this is the winter months from December through February, as shown in the monthly average plot below.
+
+```{r, eval=FALSE, echo=FALSE}
+# obtain max and min values 
+maxv <- max(minmax(nlight_mo))+1
+minv <- min(minmax(nlight_mo))
+
+png(here("vignettes/figures/bstn_monl.png"), height = 500, width = 800, 
+    units = "px", pointsize = 18)
+par(oma = c(0, 0, 0, 2))
+plot(nlight_mo, range = c(minv, maxv), axes = FALSE, smooth = TRUE)
+dev.off()
+```
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/bstn_monl.png"))
+```
+
 
 ```{r, message=FALSE, echo=FALSE}
 nlight_winter <- nlight_mo %>% subset(c(12, 1, 2)) %>% mean()
 names(nlight_winter) <- 'radiance'
-rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_winter, bstn_pop))
-names(rs) <- c("ph", "area_sqm", "population", 
+rs_mo <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_winter, bstn_pop))
+names(rs_mo) <- c("ph", "area_sqm", "population", 
                "radiance")
-
+dat <- as_tibble(as.data.frame(rs_mo, cells = TRUE)) %>% na.omit(.)
 # Get quantiles of population and building volume in pixels with public housing
-pop_quantiles <- dat %>% filter(ph > 0) %>% 
+pop_quantiles_mo <- dat %>% filter(ph > 0) %>% 
   pull(population) %>% quantile(.)
 area_quantiles <- dat %>% pull(area_sqm) %>% quantile(.)
 
@@ -267,29 +251,28 @@ ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
 combined <- bind_rows(ph_dat, no_ph_dat)
 ```
 
-Box-plots of Public-Housing and Non-Public Housing NightLights in December-February
-```{r, fig.width=7}
+Looking at the resulting box plots and comparison table below, there appears to be some accentuated differences in brightness between areas with and without public housing, however the overall trend remains the same as the long-term average brightness results.
+```{r,eval=FALSE, echo=FALSE}
 p <- ggplot(combined) + 
   geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
   scale_color_manual(values = c('red', 'blue')) +
   scale_fill_manual(values = alpha(c('red', 'blue'), 0.3)) +
   xlab("Population/Building Area Class") + ylab("Radiance in nWatts·cm−2·sr−1") +
-  theme_linedraw() #+
-p
+  theme_linedraw()
+ggsave(p, file = here("vignettes/figures/bstn_momean_bxplt.png"), 
+       height = 4, width = 10, dpi = 72)
+```
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/bstn_momean_bxplt.png"))
 ```
 
-Median Difference of Public-Housing and Non-Public Housing NightLights in December-February
-```{r}
+```{r, echo=FALSE, message=FALSE}
 rad_stats <- combined %>%
   group_by(Group, Level) %>% 
   summarize(Radiance = median(radiance)) %>% ungroup() %>% 
   pivot_wider(names_from = Group, values_from = Radiance) %>% 
   mutate(Difference = `Public housing` - `No public housing`)
 
-knitr::kable(rad_stats, digits = 0)
+knitr::kable(rad_stats, digits = 0) %>% kableExtra::kable_minimal()
 ```
-
-While we can see some more accentuated differences in brightness between areas with and without public housing, the overall trend remains the same.
-
-
 
