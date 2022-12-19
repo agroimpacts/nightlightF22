@@ -12,8 +12,7 @@ library(exactextractr)
 
 # San Francisco population raster
 
-sanfrisco_tract <- readRDS(here("data/sf_tract.RDS"))
-sanfrisco_pop <- readRDS(here("data/sanfrisco_pop.RDS"))
+sanfrisco_pop_tract <- readRDS(here("data/sf_poptract.rds"))
 sanfrisco_ph <- readRDS(here("data/sf_ph.RDS"))
 sanfrisco_bldg <- readRDS(here("data/sf_buildings.RDS"))
 
@@ -26,17 +25,9 @@ saveRDS(sf_php, file = here("data/sf_phpoly.rds"))
 
 # CREATE POPULATION GRID FOR San Francisco--------------------------------------
 
-# Drop the column header row in census pop and extracting the total population of all demographics
-sf_pop2 <- sanfrisco_pop[-1,] %>%
-  subset(demographic_category == "all") %>%
-  distinct(GEOID, .keep_all = TRUE)
-# Add area to census tracts then join population data
-sftract_pop <- sanfrisco_tract %>%
-  mutate(Area = as.numeric((st_area(.)))) %>%
-  mutate(geoid = as.numeric(geoid)) %>%
-  inner_join(., sf_pop2, by = c("geoid"="GEOID")) %>%
+# Rename the estimate column to population
+sanfrisco_pop_tract <- sanfrisco_pop_tract  %>% mutate(Area = as.numeric((st_area(.)))) %>%
   mutate(TotalPop = as.numeric(estimate))
-
 
 
 # Get nightlights grid
@@ -51,14 +42,14 @@ sfran <- readRDS(here("data/sf.rds")) %>%
 r <- nld[[1]]
 values(r) <- 1:ncell(r)
 # Mask to San Francisco, convert to polygons and project to California Albers
-r <-mask(r, sfran)
+r <- mask(r, sfran)
 p <- as.polygons(r) %>% st_as_sf()
-pgeo <- st_buffer(st_transform(p, st_crs(sanfrisco_tract)), dist = 0) %>%
+pgeo <- st_buffer(st_transform(p, st_crs(sanfrisco_pop_tract)), dist = 0) %>%
   rename(cid = "2012-2021")
 
 # Intersect tracts with polygon grid and calculate area of segments
 # Calculate population within each 'cutup' census tract piece
-tracts_cut <- st_intersection(x = sftract_pop, y = pgeo) %>%
+tracts_cut <- st_intersection(x = sanfrisco_pop_tract, y = pgeo) %>%
   mutate(area_seg = as.numeric(st_area(.))) %>%
   mutate(pop_seg = area_seg / Area * TotalPop)
 
@@ -73,7 +64,7 @@ r_pop_vals <- tracts_cut %>% group_by(cid) %>% st_drop_geometry() %>%
 cids <- values(r)[!is.na(values(r))]
 # plot(p$geometry)
 
-plot(sftract_pop["TotalPop"])
+plot(sanfrisco_pop_tract["TotalPop"])
 
 # Replace cid values with population values
 poprast <- subst(r, from = r_pop_vals$cid, to = r_pop_vals$pop)

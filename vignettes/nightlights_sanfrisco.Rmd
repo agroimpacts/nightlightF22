@@ -9,18 +9,61 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE, warning = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
-)
-```
-
-```{r setup, warning = FALSE}
-library(nightlightF22)
+  comment = "#>")
 library(terra)
 library(dplyr)
 library(sf)
 library(ggplot2)
+library(here)
+library(tidyr)
+library(knitr)
+
+```
+
+Introduction
+
+```{r , warning = FALSE}
+
+```
+
+Data
+
+```{r}
+# San Francisco census tracts & outline
+sanfrisco_tract <- readRDS(here("data/sf_tract.RDS"))
+
+# Boston public housing developments & grid
+sf_ph <- readRDS(here("data/sf_phpoly.rds"))
+sf_ph_grid <- rast(here("data/sf_ph_coverage.tif"))[[1]]
+
+# Boston buildings & grid
+sanfrisco_bldg <- readRDS(here("data/sf_buildings.RDS"))
+
+# Boston population grid
+bstn_pop <- rast(here("data/bstn_pop.tif"))[[1]]
+
+
+# Nightlights data, monthly, average for each month over 10 years, 10 year mean
+sf_nlights <- rast(here("data/SF_nightlights.tif"))
+sf_nlight_mo <- rast(here("data/SF_nightlights_mean_month.tif"))
+sf_nlight_lt <- rast(here("data/SF_nightlights_mean.tif"))
+names(sf_nlight_lt) <- "brightness"
+sf_nl_dates <- readRDS(here("data/SF_nightlight_dates.rds"))
+```
+
+
+#Public housing
+```{r}
+sf_phplt <- ggplot() +
+  geom_sf(data = sanfrisco_tract, col = alpha("grey7", 0.3), fill = "grey") +
+  geom_sf(data = sf_ph, aes(fill = ''), col = "blue", 
+          show.legend = "polygon") +
+  labs(fill = "Public Housing Development in San Fr") + 
+  theme(legend.position = c(0.2, 0.9)) 
+ggsave(phplt, file = here("vignettes/figures/bstn_housing.png"), 
+       height = 7, width = 10, dpi = 72)
 ```
 

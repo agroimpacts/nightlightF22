@@ -1,6 +1,7 @@
 library(readr)
 library(sf)
 library(raster)
+library(tidycensus)
 
 # BOSTON DATA CLEANING
 
@@ -34,9 +35,9 @@ bstnoutline <- st_union(bstn_tract) %>% st_buffer(dist = 0.0001) %>%
 saveRDS(bstntract, file = "~/GeoSpaAR/nightlightF22/data/bstn.rds")
 
 # SAN FRAN DATA CLEANING
-sanfran_pop_data <-  read_csv("notebooks/extdata/San_Francisco_Pop_data.csv")
+#sanfran_pop_data <-  read_csv("notebooks/extdata/San_Francisco_Pop_data.csv")
 
-saveRDS(sanfran_pop_data, file = "~/FinalProject_GeospatialAnalysisWithR/nightlightF22/data/sanfrisco_pop.rds")
+#saveRDS(sanfran_pop_data, file = "~/FinalProject_GeospatialAnalysisWithR/nightlightF22/data/sanfrisco_pop.rds")
 
 sf_ph <- read_csv("notebooks/extdata/publichousing_SanFrancisco.csv")
 
@@ -50,9 +51,24 @@ saveRDS(sf_ftprnt, file = "data/sf_buildings.rds")
 sf_tract <- read_sf("notebooks/extdata/SanFrancisco_2020census.geojson") %>% st_transform(crs = 3310)
 saveRDS(sf_tract, file = "data/sf_tract.rds")
 
+library(tidycensus)
+census_api_key("335e46144113732bfbc05dafe54edfbfdd433299")
+Sanfran_poptract <-  get_acs(geography = "tract",state = "CA", county = "San Francisco County",variables = "B01003_001", geometry = TRUE) %>% st_transform(crs = 3310)
+saveRDS(Sanfran_poptract, file = "data/sf_poptract.rds")
+
 sf_use_s2(FALSE)
-sfoutline <- st_union(sf_tract) %>% st_buffer(dist = 0.0001) %>%
+sfoutline <- st_union(Sanfran_poptract) %>% st_buffer(dist = 0.0001) %>%
   rmapshaper::ms_simplify(.)
 
 sanfran <- sfoutline %>% st_transform(3310)
 saveRDS(sanfran, file = "data/sf.rds")
+
+
+
+
+
+
+
+
+
+
