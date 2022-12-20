@@ -1,6 +1,6 @@
 ﻿Data,Source,Description
 VNP46A3 - VIIRS BRDF-Adjusted Monthly Nighttime Lights Imagery,NASA Black Marble Nighttime Lights Product Suite,"A set of images representing the time series of monthly night lights data over Boston  and San Francisco covering the period 2012-2021, as well as the monthly average over the period and the average of each month during the 10 year period. The imagery has a spatial resolution of 15 arc seconds."
-Public Housing Locations,Boston Housing Authority & San Francisco Housing Authority,Addresses of public housing locations from the BHA were geocoded into point data and intersected with building footprint data to get public housing polygons.
+Public Housing Locations,Boston Housing Authority & San Francisco Housing Authority,Addresses of public housing locations from the BHA and SFHA were geocoded into point data and intersected with building footprint data to get public housing polygons.
 Public Housing Percentage Grid,Derived from Public Housing Locations dataset,"Gridded dataset of the percentage of public housing across Boston and San Francisco, matched to the resolution of the nighttime lights imagery"
-Census Tracts for Boston,US Census,Vector dataset used in developing the population grid
+Census Tracts for Boston and San Francisco,US Census,Vector dataset used in developing the population grid
 Population Grid,Derived from US Census ,"Gridded dataset of population across Boston and San Francisco, matched to the resolution of the nighttime lights imagery"
