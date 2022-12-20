@@ -217,7 +217,7 @@ ggsave(bxplt, file = here("vignettes/figures/sf_ltmean_boxplot.png"),
 knitr::include_graphics(here("vignettes/figures/sf_ltmean_boxplot.png"))
 ```
 
-We can see in the box plots that 3 of the 9 population/building area classes show public housing pixels to be more brightly lit than those without public housing. The following table shows the median brightness for the public housing and non-public housing groups and the median difference in brightness. Here we can see that most areas in San Francisco with public housing developments are not more brightly lit than areas without public housing.
+We can see in the median values of the box plots that 6 of the 9 population/building area classes show public housing pixels to be more brightly lit than those without public housing. The following table shows the median brightness for the public housing and non-public housing groups and the median difference in brightness. Here we can see that most areas in San Francisco with public housing developments are more brightly lit than areas without public housing. Moreover, the area class 7 has very slightly higher median brightness for non-public housing than public housing.
 
 ```{r, message=FALSE}
 rad_stats <- combined %>%
@@ -297,4 +297,4 @@ knitr::kable(rad_stats, digits = 0)
 
 ```
 
-There are some differences but the overall trend remains the same even when we consider three months. Even now, there are 3 out of 9 areas where public housing is more brightly lit than non-public housing.
+There are some differences but the overall trend remains the same even when we consider three months. Even now, there are 6 out of 9 area classes where public housing is more brightly lit than the non-public housing.
