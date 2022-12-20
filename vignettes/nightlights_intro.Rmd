@@ -87,7 +87,9 @@ stackplt <- plot(rs, nc = 2, axes = FALSE,
 dev.off()
 ```
 Here is the resulting stack:
-```{r, echo=FALSE}
+
+
+```{r, echo=FALSE, fig.align='center'}
 knitr::include_graphics(here("vignettes/figures/gridstack.png"))
 ```
 
@@ -117,6 +119,7 @@ ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>%
   mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
   mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
   filter(., Freq > 1)
+ctab
 ```
 
 Once the levels are formed, pixels in the public housing percentage grid are first split into those that have public housing developments and those that do not. Then, each group assigned to one the building structure/population levels and the results are combined back into one tibble.
@@ -143,16 +146,34 @@ ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
 
 # combine into single table 
 combined <- bind_rows(ph_dat, no_ph_dat)
+combined
 ```
 
-After all of the groupings are formed, areas with and without public housing in each grouping are compared and the difference in median is calculated. Median is used since it is more robust statistic and is less influenced by outliers in the data. Finally, the last two steps were repeated but used just the 3 brightest months from the time series-- December through February for Boston and xxxxx for San Francisco.  
+After all of the groupings are formed, areas with and without public housing in each grouping are compared and the difference in median is calculated. Median is used for comparison since it is more robust statistic and is less influenced by outliers in the data. Finally, the last two steps were repeated but used just the 3 brightest months from the time series-- December through February for Boston and xxxxx for San Francisco.  
 
 # Results
 
 Detailed results and accompanying figures for each case study can be viewed here:
-  - Boston
-  - San Francisco
+
+  - [Boston](nightlights_boston.html)
+  
+  - [San Francisco](nightlights_sanfrisco.html)
   
 # Discussion
 
-# References
+# Endnotes
+^i^Reinhart, C. (2008). Two Crime Fighting Initiatives. Retrieved December 19, 2022, from https://www.cga.ct.gov/2008/rpt/2008-R-0468.html
+
+^ii^Riggs, M. (2014). Street lights and crime: A seemingly endless debate. Retrieved December 19, 2022, from https://www.bloomberg.com/news/articles/2014-02-12/street-lights-and-crime-a-seemingly-endless-debate
+
+^iii^Nast, C. (2021). The controversial floodlights illuminating New York City's public-housing developments. Retrieved December 19, 2022, from https://www.newyorker.com/culture/the-new-yorker-documentary/the-controversial-floodlights-illuminating-new-york-citys-public-housing-developments
+
+^iv^Martinez, A. (2021, October 15). City's crime-curbing street light initiative coming to South Dallas. Retrieved December 19, 2022, from https://www.keranews.org/news/2021-10-15/citys-crime-curbing-street-light-initiative-comes-to-south-dallas
+
+^v^Tompson, Lisa & Steinbach, Rebecca & Perkins, Chloe & Johnson, Shane & Green, Judith & Armstrong, Benedict & Grundy, Chris & Wilkinson, Paul & Edwards, Phil. (2015). The effect of reduced street lighting on road casualties and crime in England and Wales: Controlled interrupted time series analysis. Journal of Epidemiology &amp Community Health. 10.1136/jech-2015-206012.;
+
+Morrow, E.N., & Hutton, S.A. (2002). The Chicago Alley Lighting Project: Final Evaluation Report.;
+
+Sherman. (1997). Preventing crime : what works, what doesn’t, what’s promising : a report to the United States Congress. U.S. Department of Justice, Office of Justice Programs.
+
+
