@@ -181,15 +181,16 @@ combined <- bind_rows(ph_dat, no_ph_dat)
 For this we are going to make a regression plot using public housing areas (in %) as x-axis and nightlight radiance as y-axis. 
  
 
-```{r, echo=FALSE, fig.height= 7, fig.width= 7, eval=FALSE}
+```{r, echo=FALSE, eval=FALSE}
 regressplt <- sf_dat %>% filter(ph > 0) %>% 
   ggplot() + geom_point(aes(x = ph, y = radiance)) + 
   geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
   xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
-ggsave(regressplt,file = here("vignettes/figures/sf_regression.png"), height = 5, width = 5)
+ggsave(regressplt,file = here("vignettes/figures/sf_regression.png"), 
+       width = 10, dpi = 72)
 ```
 
-```{r, echo=FALSE, fig.height= 3, fig.width= 3}
+```{r, echo=FALSE}
 knitr::include_graphics(here("vignettes/figures/sf_regression.png"))
 ```
 The regression plot shows variability but there are outliers as well which have significant leverage that can incorrectly result in showing the stronger. correlation Still it can be said broadly that with increasing proportion of public housing in an area, there seems to be some increase in brightness. However, there can be other factors responsible for this relationship like population (public housing has more people living per sq.m) or building structure.
