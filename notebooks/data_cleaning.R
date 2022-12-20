@@ -45,15 +45,23 @@ sf_ph <- st_as_sf(sf_ph, coords = c("Long", "Lat"), crs = 4326) %>%
          st_transform(crs = 3310)
 saveRDS(sf_ph,file = "data/sf_ph.rds")
 
-sf_ftprnt <- read_sf("notebooks/extdata/SF_buildingfootprint.geojson")  %>%  st_transform(crs = 4326) %>% st_transform(crs = 3310)
+sf_ftprnt <- read_sf("notebooks/extdata/SF_buildingfootprint.geojson")  %>%
+             st_transform(crs = 4326) %>% st_transform(crs = 3310)
 saveRDS(sf_ftprnt, file = "data/sf_buildings.rds")
 
-sf_tract <- read_sf("notebooks/extdata/SanFrancisco_2020census.geojson") %>% st_transform(crs = 3310)
+sf_tract <- read_sf("notebooks/extdata/SanFrancisco_2020census.geojson") %>%
+            st_transform(crs = 3310)
 saveRDS(sf_tract, file = "data/sf_tract.rds")
 
 library(tidycensus)
 census_api_key("335e46144113732bfbc05dafe54edfbfdd433299")
-Sanfran_poptract <-  get_acs(geography = "tract",state = "CA", county = "San Francisco County",variables = "B01003_001", geometry = TRUE) %>% st_transform(crs = 3310)
+Sanfran_poptract <-  get_acs(geography = "tract",state = "CA",
+                             county = "San Francisco County",
+                             variables = "B01003_001",
+                             geometry = TRUE) %>%
+  st_transform(crs = 3310) %>% filter(GEOID!="06075980401")
+write_sf(Sanfran_poptract, here::here("TEST_safran_poptract.geojson"))
+
 saveRDS(Sanfran_poptract, file = "data/sf_poptract.rds")
 
 sf_use_s2(FALSE)

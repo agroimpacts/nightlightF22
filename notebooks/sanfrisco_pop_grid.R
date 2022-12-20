@@ -31,9 +31,9 @@ sanfrisco_pop_tract <- sanfrisco_pop_tract  %>% mutate(Area = as.numeric((st_are
 
 
 # Get nightlights grid
-crs <- "+proj=aea +lat_1=34 +lat_2=40.5 +lat_0=0 +lon_0=-120 +x_0=0 +y_0=-4000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+
 nld <- rast(here("data/SF_nightlights_mean.tif")) %>%
-  project(.,crs)
+  project(.,"EPSG:3310")
 sfran <- readRDS(here("data/sf.rds")) %>%
   st_transform(crs = 3310) %>%
   st_as_sf()

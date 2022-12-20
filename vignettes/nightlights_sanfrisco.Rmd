@@ -31,25 +31,27 @@ Introduction
 
 Data
 
+The following datasets were used to do the analysis for San Francisco and all were projected to EPSG:3310 NAD83 / California Albers.
+
 ```{r}
 # San Francisco census tracts & outline
-sanfrisco_tract <- readRDS(here("data/sf_tract.RDS"))
+sanfrisco_pop_tract <- readRDS(here("data/sf_poptract.rds"))
 
-# Boston public housing developments & grid
+# San Francisco public housing development areas & grid
 sf_ph <- readRDS(here("data/sf_phpoly.rds"))
 sf_ph_grid <- rast(here("data/sf_ph_coverage.tif"))[[1]]
 
-# Boston buildings & grid
+# San Francisco buildings & grid
+sanfrisco_bldg_grid <- rast(here("data/sf_bldg_grid.tif"))
 sanfrisco_bldg <- readRDS(here("data/sf_buildings.RDS"))
 
-# Boston population grid
-bstn_pop <- rast(here("data/bstn_pop.tif"))[[1]]
-
+# San Francisco population grid
+sf_pop <- rast(here("data/sf_pop.tif"))[[1]] %>% project(.,"EPSG:3310")
 
 # Nightlights data, monthly, average for each month over 10 years, 10 year mean
 sf_nlights <- rast(here("data/SF_nightlights.tif"))
 sf_nlight_mo <- rast(here("data/SF_nightlights_mean_month.tif"))
-sf_nlight_lt <- rast(here("data/SF_nightlights_mean.tif"))
+sf_nlight_lt <- rast(here("data/SF_nightlights_mean.tif")) %>% project(.,crs)
 names(sf_nlight_lt) <- "brightness"
 sf_nl_dates <- readRDS(here("data/SF_nightlight_dates.rds"))
 ```
@@ -58,12 +60,236 @@ sf_nl_dates <- readRDS(here("data/SF_nightlight_dates.rds"))
 #Public housing
 ```{r}
 sf_phplt <- ggplot() +
-  geom_sf(data = sanfrisco_tract, col = alpha("grey7", 0.3), fill = "grey") +
+  geom_sf(data = sanfrisco_pop_tract, col = alpha("grey7", 0.3), fill = "grey") +
   geom_sf(data = sf_ph, aes(fill = ''), col = "blue", 
           show.legend = "polygon") +
-  labs(fill = "Public Housing Development in San Fr") + 
+  labs(fill = "Public Housing Development in San Francisco") + 
   theme(legend.position = c(0.2, 0.9)) 
-ggsave(phplt, file = here("vignettes/figures/bstn_housing.png"), 
+ggsave(sf_phplt, file = here("vignettes/figures/sf_housing.png"), 
        height = 7, width = 10, dpi = 72)
 ```
 
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/sf_housing.png"))
+```
+
+## Methodology
+The methodology can be categorized into 3 steps
+The methods can be split into roughly 3 sections: data pre-processing, grouping areas in Boston with similar building structure and population, and comparing the median difference in nighttime radiance in areas with and without public housing. For the pre-processing, the nightlight data were first transformed from h5 files to geotiffs using a python script (see [transformhd5_debugged.py notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/transformhd5_debugged.py) for script and the monthly and long-term means were calculated and saved as Spatial Raster objects (see [nightlights_processing.R notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/nightlights_processing.R) for script).
+
+Here, we can see the average brightness of Boston nightlights between the years 2012 - and 2021. 
+
+```{r, echo=FALSE}
+sf_nlplt <- ggplot(as.data.frame(sf_nlight_lt, xy = TRUE)) + 
+  geom_raster(aes(x = x, y = y, fill = brightness)) +
+  geom_sf(data = sanfrisco_pop_tract %>% st_transform(crs = crs), fill = "transparent", 
+          col = "yellow", size = 0.2) +
+  scale_fill_distiller(
+    guide = guide_colorbar(ticks = FALSE),
+    type = "seq", direction = -1, palette = "Greys"
+  ) + xlab('') + ylab('') + theme_void()
+ggsave(sf_nlplt, file = here("vignettes/figures/sf_ltnl.png"), 
+       height = 7, width = 10, dpi = 72, bg = "grey")
+```
+
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/sf_ltnl.png"))
+```
+
+
+Next, gridded datasets were created for public housing percentage, population, and building structure. 
+
+```{r}
+test <- read_sf(here::here("TEST_safran_poptract.geojson")) %>% 
+  st_transform("EPSG:3310")
+
+sf_nightlight <- sf_nlight_lt %>% crop(test)
+sf_ph_grid <- sf_ph_grid %>% crop(test)
+sanfrisco_bldg_grid <- sanfrisco_bldg_grid %>%  crop(test) %>% mask(test)
+sf_pop <- sf_pop %>% crop(test) %>%  mask
+sf_rs <- c(sf_ph_grid * 100, sanfrisco_bldg_grid$area_sqm, sf_pop,    mask(sf_nightlight, test))
+
+names(sf_rs) <- c("ph", "area_sqm", "population", 
+               "radiance")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+png(here("vignettes/figures/sf_gridstack1.png"))
+par(oma=c(0,0,0,3))
+sf_stackplt <- plot(sf_rs, nc = 2, axes = FALSE,
+     main = c("% Public housing", "Building Area (SqM)", "Population", 
+              "Nighttime radiance"))
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/sf_gridstack1.png"))
+```
+<!-- To do this grouping, the quantiles for building area and population in pixels with public housing is calculated. The quantile values are then cross-tabulated to get a table of each combination of population group and building area levels. -->
+
+```{r}
+sf_dat <- as_tibble(as.data.frame(sf_rs, cells = TRUE)) %>% na.omit(.)
+# Get quantiles of population and building volume in pixels with public housing
+pop_quantiles <- sf_dat %>% filter(ph > 0) %>% 
+  pull(population) %>% quantile(.)
+sf_dat <- sf_dat %>% mutate(area_sqm = as.integer(area_sqm))
+area_quantiles <- sf_dat %>% pull(area_sqm) %>% quantile(.)
+
+# Assign quantile to each cell with public housing
+poparea <- sf_dat %>% filter(ph > 0) %>% 
+  mutate(., pop_class = cut(population, pop_quantiles, include.lowest = TRUE, dig.lab = 4)) %>% 
+  mutate(., barea_class = cut(area_sqm, area_quantiles, include.lowest = TRUE, dig.lab = 6))
+
+# Create new table with quantiles of pop and area as x & y
+# showing count of each pixel for each combination of quantiles
+# Drop () & [] special characters from each column
+ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>% 
+  as.data.frame(.) %>% 
+  separate(., col = pop, into = c("pop_lower", "pop_upper"), sep = ",") %>% 
+  separate(., col = barea, into = c("barea_lower", "barea_upper"), sep = ",") %>%
+  mutate(., pop_lower = as.numeric(gsub('\\[|\\(', '', pop_lower))) %>% 
+  mutate(., pop_upper = as.numeric(gsub("\\]|\\)", "", pop_upper))) %>%
+  mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
+  mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
+  filter(., Freq > 1)
+```
+
+<!-- Once the levels are formed, pixels in the public housing percentage grid are first split into those that have public housing developments and those that do not. Then, each group assigned to one the building structure/population levels and the results are combined back into one tibble. -->
+
+```{r}
+# Select pixels with no public housing within the different combination
+# of population and building area quantiles
+no_ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  sf_dat %>% filter(ph == 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "No public housing")
+}) %>% bind_rows()
+
+# Select pixels with public housing into the same categories 
+ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  sf_dat %>% filter(ph > 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "Public housing")
+  }) %>% bind_rows()
+
+# combine into single table 
+combined <- bind_rows(ph_dat, no_ph_dat)
+```
+# Analysis
+
+### What is the relationship between public housing and brightness?
+
+
+```{r, echo=FALSE, eval=FALSE}
+regressplt <- sf_dat %>% filter(ph > 0) %>% 
+  ggplot() + geom_point(aes(x = ph, y = radiance)) + 
+  geom_smooth(aes(x = ph, y = radiance), method = "lm") + 
+  xlab("% public housing") + ylab("Radiance in nWatts·cm−2·sr−1")
+ggsave(regressplt,file = here("vignettes/figures/sf_regression.png"), width = 7)
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/sf_regression.png"))
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+bxplt <- ggplot(combined) + 
+  geom_boxplot(aes(x = Level, y = radiance, fill = Group)) +
+  scale_color_manual(values = c('gold', 'black')) +
+  scale_fill_manual(values = alpha(c('gold', 'black'), 0.3)) +
+  xlab("Population/Building Area Class") + ylab("Radiance in nWatts·cm−2·sr−1") +
+  theme_linedraw()
+ggsave(bxplt, file = here("vignettes/figures/sf_ltmean_boxplot.png"), 
+       height = 7, width = 10, dpi = 72, bg = "grey")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics(here("vignettes/figures/sf_ltmean_boxplot.png"))
+```
+
+
+```{r, message=FALSE}
+rad_stats <- combined %>%
+  group_by(Group, Level) %>% 
+  summarize(Radiance = median(radiance)) %>% ungroup() %>% 
+  pivot_wider(names_from = Group, values_from = Radiance) %>% 
+  mutate(Difference = `Public housing` - `No public housing`)
+
+knitr::kable(rad_stats, digits = 0)
+```
+
+
+
+```{r, message=FALSE, echo=FALSE}
+sf_nlight_winter <- sf_nlight_mo %>% subset(c(12, 1, 2)) %>% mean() %>% project(.,"EPSG:3310")
+names(sf_nlight_winter) <- 'radiance'
+sf_nlight_winter <- sf_nlight_winter %>% crop(test)
+
+rs <- c(sf_ph_grid * 100, sanfrisco_bldg_grid$area_sqm, sf_pop, mask(sf_nlight_winter, sf_pop))
+names(rs) <- c("ph", "area_sqm", "population", 
+               "radiance")
+
+# Get quantiles of population and building volume in pixels with public housing
+pop_quantiles <- sf_dat %>% filter(ph > 0) %>% 
+  pull(population) %>% quantile(.)
+area_quantiles <- sf_dat %>% pull(area_sqm) %>% quantile(.)
+
+# Assign quantile to each cell with public housing
+poparea <- sf_dat %>% filter(ph > 0) %>% 
+  mutate(., pop_class = cut(population, pop_quantiles, include.lowest = TRUE, dig.lab = 4)) %>% 
+  mutate(., barea_class = cut(area_sqm, area_quantiles, include.lowest = TRUE, dig.lab = 6))
+
+# Create new table with quantiles of pop and area as x & y
+# showing count of each pixel for each combination of quantiles
+# Drop () & [] special characters from each column
+ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>% 
+  as.data.frame(.) %>% 
+  separate(., col = pop, into = c("pop_lower", "pop_upper"), sep = ",") %>% 
+  separate(., col = barea, into = c("barea_lower", "barea_upper"), sep = ",") %>%
+  mutate(., pop_lower = as.numeric(gsub('\\[|\\(', '', pop_lower))) %>% 
+  mutate(., pop_upper = as.numeric(gsub("\\]|\\)", "", pop_upper))) %>%
+  mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
+  mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
+  filter(., Freq > 1)
+# Select pixels with no public housing within the different combination
+# of population and building area quantiles
+no_ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  sf_dat %>% filter(ph == 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "No public housing")
+}) %>% bind_rows()
+
+# Select pixels with public housing into the same categories 
+ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  sf_dat %>% filter(ph > 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "Public housing")
+  }) %>% bind_rows()
+
+# combine into single table 
+combined <- bind_rows(ph_dat, no_ph_dat)
+```
+
+
+
+Median Difference of Public-Housing and Non-Public Housing NightLights in December-February
+```{r}
+rad_stats <- combined %>%
+  group_by(Group, Level) %>% 
+  summarize(Radiance = median(radiance)) %>% ungroup() %>% 
+  pivot_wider(names_from = Group, values_from = Radiance) %>% 
+  mutate(Difference = `Public housing` - `No public housing`)
+
+knitr::kable(rad_stats, digits = 0)
+```
+
+While we can see some more accentuated differences in brightness between areas with and without public housing, the overall trend remains the same.
