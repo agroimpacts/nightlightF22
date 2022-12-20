@@ -1,0 +1,184 @@
+---
+title: "nightlights_intro"
+author: "Lester Carver & Spandan Pandey"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{nightlights_intro}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE, warnings = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(terra)
+library(dplyr)
+library(sf)
+library(ggplot2)
+library(here)
+library(tidyr)
+library(knitr)
+```
+# Introduction
+Increasing nighttime lighting (also referred to as street lighting) is a tool used be police as a strategy for reducing crime across. We have seen historical examples of this such as Boston’s Operation Night Light in the mid-1990s^i^ and a plan in London to install over 3000 street lights in the 1980s^ii^  as well as contemporary initiatives such as floodlights installed by the New York Police Department in NYC in 2015^iii^  and Dallas’ 2021 public safety plan that includes the installation of new street lights.^iv^  Despite this being a popular tool used by police departments, the evidence around the impact of street lighting on crime prevention is highly mixed and there are several studies which suggest that increased nighttime lights has no impact and, in come cases, even increases crime.^v^
+
+This project is a follow-on to a proof-of-concept project looking at the feasibility of detecting police surveillance floodlights in New York City using the NASA Black Marble nighttime lights products. In our effort to further expand on this work, we look at two new case studies—Boston and San Francisco—to explore the relationship between nighttime radiance and the presence of public housing in the two study areas. Our aim is to find whether neighborhoods with public housing are more brightly lit than those neighborhoods with non-public housing in Boston and San Francisco between 2012-2020. The overall project objectives are to:
+
+1. Evaluate any correlation between brightly lit neighborhoods and neighborhoods with public housing across our two study areas.
+2. Further assess the feasibility of nightlight imagery to find differences of excessively lit neighborhood and those which are not, building on the New York City study. 
+
+# Data & Methods
+## Data
+
+The following datasets are used in this case study:
+```{r, echo=FALSE}
+datasets <- read.csv(here("data/datasets.csv"))
+kable(datasets, col.names = c("Data", "Source", "Description")) %>%
+  kableExtra::kable_minimal()
+```
+All data were projected into the NAD83 - Massachusetts Mainland ESPG:26986 and NAD83 - California Albers ESPG:3310 coordinate systems respectively.
+
+## Methods
+The methods can be split into roughly 3 sections: data pre-processing, grouping areas in the two study areas with similar building structure and population, and comparing the median difference in nighttime radiance in areas with and without public housing. For the pre-processing, the nightlight data were first transformed from h5 files to geotifs using a python script (see [transformhd5_debugged.py notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/transformhd5_debugged.py) for script and the monthly and long-term means were calculated and saved as Spatial Raster objects (see [nightlights_processing.R notebook](https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/nightlights_processing.R) for script).
+
+Next, gridded datasets were created for public housing percentage, population, and building structure. For all three, empty rasters were created, matching the properties to the nightlight data and then masked to the study area. For public housing, the fraction of public housing developments within each pixel was calculated to get a dataset. For population, the grid was intersected with census tracts and the population within each intersected area was calculated. Finally, the square area of buildings from the building footprint dataset was used to approximate living space so, similar to the population grid, the building footprints were intersected with the grid and the total square area in each intersected area was calculated. In the case of San Francisco, square area of buildings was calculated by dividing height of buildings by the average story height (~4m) to get the number of stories in a building and then multiplied with the building footprint area. Scripts for these steps can be found here: [boston_pop_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/boston_pop_grid.R), [sanfrisco_pop_grid.R](https://github.com/agroimpacts/nightlightF22/blob/555cb58ea4e884d297016b997ce2224eabbe20c0/notebooks/sanfrisco_pop_grid.R), [sf_building_grid.R](https://github.com/agroimpacts/nightlightF22/blob/555cb58ea4e884d297016b997ce2224eabbe20c0/notebooks/sf_building_grid.R) and [bstn_building_grid.R]( https://github.com/agroimpacts/nightlightF22/blob/33dd7a3f674f5abf85627a9158e6b53f8e4d9d3b/notebooks/bstn_building_grid.R). 
+
+In order to account for how different characteristics of the urban environment might impact the nighttime brightness, the nightlight data were grouped based on building structure and population to compare brightness by like areas. In order to do this, the four gridded datasets are stacked. For the purposes of demonstration, the Boston data will be used in the following code chunks, but both cases follow the same code structure.
+
+```{r, echo=FALSE}
+#Load data
+# Boston Census tracts & outline
+bstntract <- readRDS(here("data/bstn_tract.rds"))
+
+# Boston public housing developments & grid
+bstn_ph <- readRDS(here("data/bstn_phpoly.rds"))
+bstn_ph_grid <- rast(here("data/bstn_ph_coverage.tif"))[[1]]
+
+# Boston buildings & grid
+bstn_bldg_grid <- rast(here("data/bstn_bldg_grid.tif"))
+bstn_bldg <- readRDS(here("data/bstn_bldg.rds"))
+
+# Boston population grid
+bstn_pop <- rast(here("data/bstn_pop.tif"))[[1]]
+
+# Nightlights data, monthly, average for each month over 10 years, 10 year mean
+nlights <- rast(here("data/Boston_nightlights.tif"))
+nlight_mo <- rast(here("data/Boston_nightlights_mean_month.tif"))
+nlight_lt <- rast(here("data/Boston_nightlights_mean.tif"))
+names(nlight_lt) <- "brightness"
+nl_dates <- readRDS(here("data/Boston_nightlight_dates.rds"))
+```
+
+```{r}
+rs <- c(bstn_ph_grid * 100, bstn_bldg_grid$area_sqm, bstn_pop, mask(nlight_lt, bstn_pop))
+names(rs) <- c("ph", "area_sqm", "population", 
+               "radiance")
+```
+
+```{r, echo=FALSE, eval=FALSE}
+png(here("vignettes/figures/gridstack.png"))
+par(oma=c(0,0,0,3))
+stackplt <- plot(rs, nc = 2, axes = FALSE,
+     main = c("% Public housing", "Building Area (SqM)", "Population", 
+              "Nighttime radiance"))
+dev.off()
+```
+Here is the resulting stack:
+
+
+```{r, echo=FALSE, fig.align='center'}
+knitr::include_graphics(here("vignettes/figures/gridstack.png"))
+```
+
+To do this grouping, the quantiles for building area and population in pixels with public housing are calculated. The quantile values are then cross-tabulated to get a table of each combination of population group and building area levels.
+
+```{r}
+dat <- as_tibble(as.data.frame(rs, cells = TRUE)) %>% na.omit(.)
+# Get quantiles of population and building volume in pixels with public housing
+pop_quantiles <- dat %>% filter(ph > 0) %>% 
+  pull(population) %>% quantile(.)
+area_quantiles <- dat %>% pull(area_sqm) %>% quantile(.)
+
+# Assign quantile to each cell with public housing
+poparea <- dat %>% filter(ph > 0) %>% 
+  mutate(., pop_class = cut(population, pop_quantiles, include.lowest = TRUE, dig.lab = 4)) %>% 
+  mutate(., barea_class = cut(area_sqm, area_quantiles, include.lowest = TRUE, dig.lab = 6))
+
+# Create new table with quantiles of pop and area as x & y
+# showing count of each pixel for each combination of quantiles
+# Drop () & [] special characters from each column
+ctab <- table(pop = poparea$pop_class, barea = poparea$barea_class) %>% 
+  as.data.frame(.) %>% 
+  separate(., col = pop, into = c("pop_lower", "pop_upper"), sep = ",") %>% 
+  separate(., col = barea, into = c("barea_lower", "barea_upper"), sep = ",") %>%
+  mutate(., pop_lower = as.numeric(gsub('\\[|\\(', '', pop_lower))) %>% 
+  mutate(., pop_upper = as.numeric(gsub("\\]|\\)", "", pop_upper))) %>%
+  mutate(., barea_lower = as.numeric(gsub("\\(|\\[", "", barea_lower))) %>%
+  mutate(., barea_upper = as.numeric(gsub("\\]|\\)", "", barea_upper))) %>%
+  filter(., Freq > 1)
+ctab
+```
+
+Once the levels are formed, pixels in the public housing percentage grid are first split into those that have public housing developments and those that do not. Then, each group assigned to one the building structure/population levels and the results are combined back into one tibble.
+
+```{r}
+# Select pixels with no public housing within the different combination
+# of population and building area quantiles
+no_ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  dat %>% filter(ph == 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "No public housing")
+}) %>% bind_rows()
+
+# Select pixels with public housing into the same categories 
+ph_dat <- lapply(1:nrow(ctab), function(x) {   # x <- 1
+  l <- ctab[x, ]
+  dat %>% filter(ph > 0) %>% 
+    filter(between(population, l$pop_lower, l$pop_upper)) %>% 
+    filter(between(area_sqm, l$barea_lower, l$barea_upper)) %>% 
+    mutate(Level = factor(x), Group = "Public housing")
+  }) %>% bind_rows()
+
+# combine into single table 
+combined <- bind_rows(ph_dat, no_ph_dat)
+combined
+```
+
+After all of the groupings are formed, areas with and without public housing in each grouping are compared and the difference in median is calculated. Median is used for comparison since it is more robust statistic and is less influenced by outliers in the data. Finally, the last two steps were repeated but used just the 3 brightest months from the time series-- December through February for Boston and xxxxx for San Francisco.  
+
+# Results
+
+Detailed results and accompanying figures for each case study can be viewed here:
+
+  - [Boston](nightlights_boston.html)
+  
+  - [San Francisco](nightlights_sanfrisco.html)
+  
+# Discussion
+
+In Boston, an overall positive relationship between the percentage of public housing and nighttime radiance was found. Furthermore, areas are grouped by similar building structure and population, areas with public housing consistently have higher nighttime brightness than areas without public housing. This trend holds for both the long-term average and winter average in Boston. While this is not conclusive evidence that areas in Boston with public housing have higher police surveillance, it does suggest there may be some relationship that could be further explored. In addition to looking at what these results mean in terms of surveillance, we know that light pollution has net adverse impacts on human health so a further exploration of the socio-economic dimensions of nighttime light exposure would also be relevant from a health perspective. 
+
+One key challenge in this case study was the limited number of public housing developments in Boston (or at least listed by the Boston Housing Authority). There were only 53 public housing developments, which translated into there being a very lower percentage of public housing in the public housing grid. Because of this, we were limited to doing our comparison on areas that had public housing or not, which means pixels that had only a very small area of public housing were still included in the public housing grouping, which may not be representative of the urban environment. 
+
+
+# Endnotes
+^i^Reinhart, C. (2008). Two Crime Fighting Initiatives. Retrieved December 19, 2022, from https://www.cga.ct.gov/2008/rpt/2008-R-0468.html
+
+^ii^Riggs, M. (2014). Street lights and crime: A seemingly endless debate. Retrieved December 19, 2022, from https://www.bloomberg.com/news/articles/2014-02-12/street-lights-and-crime-a-seemingly-endless-debate
+
+^iii^Nast, C. (2021). The controversial floodlights illuminating New York City's public-housing developments. Retrieved December 19, 2022, from https://www.newyorker.com/culture/the-new-yorker-documentary/the-controversial-floodlights-illuminating-new-york-citys-public-housing-developments
+
+^iv^Martinez, A. (2021, October 15). City's crime-curbing street light initiative coming to South Dallas. Retrieved December 19, 2022, from https://www.keranews.org/news/2021-10-15/citys-crime-curbing-street-light-initiative-comes-to-south-dallas
+
+^v^Tompson, Lisa & Steinbach, Rebecca & Perkins, Chloe & Johnson, Shane & Green, Judith & Armstrong, Benedict & Grundy, Chris & Wilkinson, Paul & Edwards, Phil. (2015). The effect of reduced street lighting on road casualties and crime in England and Wales: Controlled interrupted time series analysis. Journal of Epidemiology &amp Community Health. 10.1136/jech-2015-206012.;
+
+Morrow, E.N., & Hutton, S.A. (2002). The Chicago Alley Lighting Project: Final Evaluation Report.;
+
+Sherman. (1997). Preventing crime : what works, what doesn’t, what’s promising : a report to the United States Congress. U.S. Department of Justice, Office of Justice Programs.
+
+
